@@ -1,4 +1,5 @@
 -- by BinaryCrypt
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Undetected%20Anti-Kick.lua"))()
 
 assert(cloneref, "Your executor not supported 'cloneref'")
 assert(clonefunction, "Your executor not supported 'clonefunction'")
