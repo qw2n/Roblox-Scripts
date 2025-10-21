@@ -21,17 +21,17 @@ local oldcall; oldcall = hookmetamethod(game, "__namecall", newcclosure(function
     if (namecall == "Kick" or namecall == "kick") and a[1] == plr then
         warn("Trying kick with namecall with message:", a[2])
 
-        return nil
+        return
 
     elseif (namecall == "Remove" or namecall == "remove") and a[1] == plr then
         warn("Trying remove player from game using by namecall")
 
-        return nil
+        return
 
     elseif (namecall == "Destroy" or namecall == "destroy") and a[1] == plr then
         warn("Trying destroy player from game using by namecall")
 
-        return nil
+        return
     end
 
     return oldcall(...)
@@ -53,36 +53,36 @@ hookfunction(plr.Kick, newcclosure(function(self: Player, message: string)
     if self == plr then
         warn("Trying kick without namecall with message:", message)
 
-        return nil
+        return
     end
 
     oldKick(self, message)
 
-    return nil
+    return
 end))
 
 hookfunction(game.Destroy, newcclosure(function(self: Instance)
     if not self then
         error("Expected ':' not '.' calling member function Destroy", 2)
 
-        return nil
+        return
     end
 
     if typeof(self) ~= "Instance" then
         error("Expected ':' not '.' calling member function Destroy", 2)
 
-        return nil
+        return
     end
 
     if self:IsA("Player") and self == plr then
         warn("Trying destroy player from game without namecall")
 
-        return nil
+        return
     end
 
     oldDestroy(self)
 
-    return nil
+    return
 end))
 
 hookfunction(game.Remove, newcclosure(function(self: Instance)
@@ -97,10 +97,10 @@ hookfunction(game.Remove, newcclosure(function(self: Instance)
     if self:IsA("Player") and self == plr then
         warn("Trying remove player from game without namecall")
 
-        return nil
+        return
     end
 
     oldRemove(self)
 
-    return nil
+    return
 end))
