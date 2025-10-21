@@ -335,5 +335,4 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 
         Box:ShowBox()
     end
-
 end))
