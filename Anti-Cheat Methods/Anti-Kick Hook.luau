@@ -3,90 +3,162 @@
 local Players = game:GetService("Players")
 
 local plr = Players.LocalPlayer
-local Kick = plr.Kick
+
+local Kicks = {
+	new = plr.Kick,
+	old = plr.kick
+}
 
 while task.wait(0.5) do
-    local lastTick, isDone = tick(), false
+	local lastTick, isDone, isDetected = tick(), false, false
 
-    local Thread = coroutine.create(function()
-        xpcall(function()
-            Kick(123)
+	local Thread = coroutine.create(function()
+		if xpcall(function()
+				for _, Kick in Kicks do
+					Kick(123)
+				end
 
-            print("[INFO]: Anti-Kick Detected! 0x1")
-        end, function()
-            -- nothing
-        end)
+				return true, print("[INFO]: Anti-Kick Detected! 0x1")
+			end, function()
+				return false
+			end)
+		then
+			isDetected = true
+			isDone = true
+			
+			return
+		end
 
-        xpcall(function()
-            Kick(workspace)
+		if xpcall(function()
+				for _, Kick in Kicks do
+					Kick(workspace)
+				end
 
-            print("[INFO]: Anti-Kick Detected! 0x2")
-        end, function()
-            -- nothing
-        end)
+				return true, print("[INFO]: Anti-Kick Detected! 0x2")
+			end, function()
+				return false
+			end)
+		then
+			isDetected = true
+			isDone = true
 
-        xpcall(function()
-            Kick("")
+			return
+		end
 
-            print("[INFO]: Anti-Kick Detected! 0x3")
-        end, function()
-            -- nothing
-        end)
+		if xpcall(function()
+				for _, Kick in Kicks do
+					Kick("")
+				end
 
-        xpcall(function()
-            Kick({})
+				return true, print("[INFO]: Anti-Kick Detected! 0x3")
+			end, function()
+				return false
+			end)
+		then
+			isDetected = true
+			isDone = true
 
-            print("[INFO]: Anti-Kick Detected! 0x4")
-        end, function()
-            -- nothing
-        end)
+			return
+		end
 
-        xpcall(function()
-            Kick(nil)
+		if xpcall(function()
+				for _, Kick in Kicks do
+					Kick({})
+				end
 
-            print("[INFO]: Anti-Kick Detected! 0x5")
-        end, function()
-            -- nothing
-        end)
+				return true, print("[INFO]: Anti-Kick Detected! 0x4")
+			end, function()
+				return false
+			end)
+		then
+			isDetected = true
+			isDone = true
 
-        xpcall(function()
-            local Object = newproxy(true)
-            local meta = getmetatable(Object)
-            meta.__index = function()
-                error("asdasdasasasd")
-            end
-            
-            meta.__tostring = function()
-                error("asdasdasasasd")
-            end
+			return
+		end
 
-            Kick(Object)
-        end, function(msg)
-            if msg ~= "Expected ':' not '.' calling member function Kick" then
-                warn("[INFO]: Anti-Kick Detected! 0x6")
-            end
-        end)
+		if xpcall(function()
+				for _, Kick in Kicks do
+					Kick(nil)
+				end
 
-        xpcall(function()
-            plr:kIcK()
+				return true, print("[INFO]: Anti-Kick Detected! 0x5")
+			end, function()
+				return false
+			end)
+		then
+			isDetected = true
+			isDone = true
 
-            warn("[INFO]: Anti-Kick Detected! 0x7")
-        end, function()
-            -- nothing
-        end)
+			return
+		end
 
-        isDone = true
-    end)
+		if xpcall(function()
+				local Object = newproxy(true)
+				local meta = getmetatable(Object) do
+					meta.__eq = error
+					meta.__lt = error
+					meta.__le = error
+					meta.__add = error
+					meta.__sub = error
+					meta.__mul = error
+					meta.__div = error
+					meta.__mod = error
+					meta.__pow = error
+					meta.__unm = error
+					meta.__len = error
+					meta.__call = error
+					meta.__index = error
+					meta.__concat = error
+					meta.__tostring = error
+					meta.__newindex = error
+				end
 
-    coroutine.resume(Thread)
+				for _, Kick in Kicks do
+					Kick(Object)
+				end
 
-    while not isDone and task.wait(1) do
-        if tick()-lastTick > 5 then
-            coroutine.close(Thread)
+				return false
+			end, function(msg)
+				if msg ~= "Expected ':' not '.' calling member function Kick" then
+					return true, warn("[INFO]: Anti-Kick Detected! 0x6")
+				end
+			end)
+		then
+			isDetected = true
+			isDone = true
 
-            warn("[INFO]: Anti-Kick Detected! 0x8")
-        end
-    end
+			return
+		end
 
-    print("[INFO]: OK")
+		if xpcall(function()
+				plr:kIcK()
+
+				return true, warn("[INFO]: Anti-Kick Detected! 0x7")
+			end, function()
+				return false
+			end)
+		then
+			isDetected = true
+			isDone = true
+
+			return
+		end
+		
+		isDone = true
+	end)
+	
+	coroutine.resume(Thread)
+
+	while not isDone and task.wait(1) do
+		if tick()-lastTick > 5 then
+			coroutine.close(Thread)
+
+			warn("[INFO]: Anti-Kick Detected! 0x9")
+		end
+	end
+
+	if not isDetected then
+		print("[INFO]: OK")
+	end
 end
