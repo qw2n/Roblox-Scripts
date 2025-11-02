@@ -82,5 +82,4 @@ local Remove; Remove = hookfunction(game.Remove, newcclosure(function(self: Inst
 	end
 
 	return Remove(self)
-
 end))
