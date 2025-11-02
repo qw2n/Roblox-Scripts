@@ -1,1 +1,1 @@
-More in: https://discord.gg/pY6nDej76m
+Discord Server: https://discord.gg/pY6nDej76m
