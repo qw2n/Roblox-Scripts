@@ -9,9 +9,9 @@ local function check(a, er)
 	return a
 end
 
-local getgenv = assert(getgenv, "Your executor not supported 'getgenv'")
-local cloneref = assert(cloneref, "Your executor not supported 'cloneref'")
-local Drawing = assert(Drawing, "Your executor not supported Drawing library")
+local getgenv = check(getgenv, "Your executor not supported 'getgenv'")
+local cloneref = check(cloneref, "Your executor not supported 'cloneref'")
+local Drawing = check(Drawing, "Your executor not supported Drawing library")
 
 if getgenv().EspCache and getgenv().EspCache.Destroy then
 	getgenv().EspCache.Destroy()
@@ -343,4 +343,5 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 
 		Box:ShowBox()
 	end
+
 end))
