@@ -1,4 +1,4 @@
--- by BinaryCrypt
+-- by Qwar1e
 -- loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/ESP.luau"))()
 
 local function check(a, er)
@@ -345,4 +345,5 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 	end
 
 end))
+
 
