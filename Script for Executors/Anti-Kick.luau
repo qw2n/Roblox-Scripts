@@ -1,4 +1,4 @@
--- by BinaryCrypt
+-- by Qwar1e
 -- loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/Anti-Kick.luau"))()
 
 local function check(a, er)
@@ -83,3 +83,4 @@ local Remove; Remove = hookfunction(game.Remove, newcclosure(function(self: Inst
 
 	return Remove(self)
 end))
+
