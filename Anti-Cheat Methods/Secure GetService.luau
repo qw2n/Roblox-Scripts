@@ -22,6 +22,19 @@ local GetService do
 	end)
 end
 
+local game: typeof(game) = setmetatable({}, {
+	__index = function(self, key)
+		if key == "GetService" or key == "FindService" then
+			return function(self, Name: string)
+				return GetService(Name)
+			end
+		end
+		
+		return _game[key]
+	end,
+})
+
 print(
-	GetService("Players")
+	game:GetService("Players"),
+	game:FindService("Players")
 )
