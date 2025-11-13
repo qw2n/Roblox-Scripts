@@ -19,21 +19,19 @@ local Players = cloneref(game:GetService("Players")) :: Players
 
 local plr = Players.LocalPlayer
 
-local __namecall; __namecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
-	local a = {...}
-
+local __namecall; __namecall = hookmetamethod(game, "__namecall", newcclosure(function(self: Player, message: string, ...)
 	local namecall = getnamecallmethod() :: string
-	if (namecall == "Kick" or namecall == "kick") and a[1] == plr then
-		return warn("Trying kick with namecall with message:", a[2])
+	if (namecall == "Kick" or namecall == "kick") and self == plr then
+		return warn("Trying kick with namecall with message:", message)
 
-	elseif (namecall == "Remove" or namecall == "remove") and a[1] == plr then
+	elseif (namecall == "Remove" or namecall == "remove") and self == plr then
 		return warn("Trying remove player from game using by namecall")
 
-	elseif (namecall == "Destroy" or namecall == "destroy") and a[1] == plr then
+	elseif (namecall == "Destroy" or namecall == "destroy") and self == plr then
 		return warn("Trying destroy player from game using by namecall")
 	end
 
-	return __namecall(...)
+	return __namecall(self, message, ...)
 end))
 
 local Kick; Kick = hookfunction(plr.Kick, newcclosure(function(self: Player, message: string)
