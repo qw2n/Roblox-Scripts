@@ -37,14 +37,6 @@ local __namecall; __namecall = hookmetamethod(game, "__namecall", newcclosure(fu
 end))
 
 local Kick; Kick = hookfunction(plr.Kick, newcclosure(function(self: Player, message: string)
-	if not self then
-		error("Expected ':' not '.' calling member function Kick", 2)
-	end
-
-	if type(self) ~= "userdata" then
-		error("Expected ':' not '.' calling member function Kick", 2)
-	end
-
 	if self == plr then
 		return warn("Trying kick without namecall with message:", message)
 	end
@@ -53,14 +45,6 @@ local Kick; Kick = hookfunction(plr.Kick, newcclosure(function(self: Player, mes
 end))
 
 local Destroy; Destroy = hookfunction(game.Destroy, newcclosure(function(self: Instance)
-	if not self then
-		error("Expected ':' not '.' calling member function Destroy", 2)
-	end
-
-	if typeof(self) ~= "Instance" then
-		error("Expected ':' not '.' calling member function Destroy", 2)
-	end
-
 	if self == plr then
 		return warn("Trying destroy player from game without namecall")
 	end
@@ -69,18 +53,9 @@ local Destroy; Destroy = hookfunction(game.Destroy, newcclosure(function(self: I
 end))
 
 local Remove; Remove = hookfunction(game.Remove, newcclosure(function(self: Instance)
-	if not self then
-		error("Expected ':' not '.' calling member function Remove", 2)
-	end
-
-	if typeof(self) ~= "Instance" then
-		error("Expected ':' not '.' calling member function Remove", 2)
-	end
-
 	if self == plr then
 		return warn("Trying remove player from game without namecall")
 	end
 
 	return Remove(self)
 end))
-
