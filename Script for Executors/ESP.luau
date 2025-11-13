@@ -44,7 +44,9 @@ type espClassType = {
 	RemoveBox: () -> nil,
 	HideBox: () -> nil,
 	ShowBox: () -> nil,
+
 	plr: Player,
+
 	Components: {
 		Up: Frame,
 		Down: Frame,
@@ -52,6 +54,7 @@ type espClassType = {
 		Right: Frame,
 		Tracer: Frame?
 	},
+
 	__cache: {
 		lastColor: Color3,
 		lastTracerColor: Color3,
@@ -66,6 +69,7 @@ getgenv().EspCache = {
 		for _, Box in getgenv().EspCache.Boxes do
 			Box:RemoveBox()
 		end
+
 		for _, i in getgenv().EspCache.Connections do
 			i:Disconnect()
 		end
@@ -82,7 +86,9 @@ local espClass do
 
 		local self = setmetatable({
 			plr = plr,
+
 			Components = nil,
+
 			__cache = {
 				lastColor = nil,
 				lastTracerColor = nil,
@@ -244,8 +250,11 @@ end
 
 table.insert(getgenv().EspCache.Connections, Players.PlayerRemoving:Connect(function(plr)
 	if Owner == plr then return end
+
 	local box = getgenv().EspCache.Boxes[plr]
-	if box then box:RemoveBox() end
+	if box then 
+		box:RemoveBox()
+	end
 end))
 
 table.insert(getgenv().EspCache.Connections, Players.PlayerAdded:Connect(espClass.new))
@@ -345,5 +354,3 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 	end
 
 end))
-
-
