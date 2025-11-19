@@ -49,6 +49,10 @@ function module.new(Object: Instance)
 			
 			Object[index] = value
 		end,
+
+        __tostring = function()
+            return tostring(Object)
+        end
 	}) :: typeof(Object) & typeof(module)
 end
 
