@@ -15,10 +15,10 @@ end)
 while true do
 	local lastTick = tick()
 
-	local FreezeDetected = true
+	local FreezeDetected, delta = true, 0
 
 	local Thread = coroutine.create(function()
-		task.wait(2)
+		delta = task.wait(2)
 
 		FreezeDetected = false
 	end)
@@ -32,6 +32,10 @@ while true do
 	end
 
 	coroutine.close(Thread)
+
+    if delta < 1.5 then
+        FreezeDetected = true
+    end
 
 	if FreezeDetected then
 		print("[INFO]: task.wait freeze detected")
