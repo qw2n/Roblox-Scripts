@@ -23,22 +23,6 @@ local RunService = cloneref(game:GetService("RunService")) :: RunService
 local Owner = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
-local cfg = {
-	UI = true,
-
-	ESP = {
-		Enabled = false,
-		TeamCheck = false,
-		Color = Color3.fromRGB(255, 255, 255)
-	},
-
-	Tracer = {
-		Enabled = false,
-
-		Origin = "Bottom"
-	}
-}
-
 type espClassType = {
 	new: (plr: Player) -> espClassType,
 	RemoveBox: () -> nil,
@@ -52,13 +36,34 @@ type espClassType = {
 		Down: Frame,
 		Left: Frame,
 		Right: Frame,
-		Tracer: Frame?
+		Tracer: Frame?,
+		Distance: TextLabel?
 	},
 
 	__cache: {
 		lastColor: Color3,
 		lastTracerColor: Color3,
 		lastTracerThickness: number
+	}
+}
+
+type TracerModeType = "Bottom" | "Middle" | "Top" | "Cursor"
+
+local cfg = {
+	UI = true,
+
+	ESP = {
+		Enabled = false,
+		TeamCheck = false,
+		ShowDistance = false,
+		
+		Color = Color3.fromRGB(255, 255, 255)
+	},
+
+	Tracer = {
+		Enabled = false,
+
+		Origin = "Bottom" :: TracerModeType
 	}
 }
 
@@ -126,12 +131,21 @@ local espClass do
 		Tracer.Thickness = 1
 		Tracer.Transparency = 1
 
+		local Distance = Drawing.new("Text")
+		Distance.Visible = false
+		Distance.Color = cfg.ESP.Color
+		Distance.Size = 13
+		Distance.Center = true
+		Distance.Outline = true
+		Distance.Transparency = 1
+
 		self.Components = {
 			Up = Up,
 			Down = Down,
 			Left = Left,
 			Right = Right,
-			Tracer = Tracer
+			Tracer = Tracer,
+			Distance = Distance
 		}
 
 		getgenv().EspCache.Boxes[plr] = self
@@ -159,6 +173,9 @@ local espClass do
 		for name, component in self.Components do
 			if name == "Tracer" then
 				component.Visible = cfg.Tracer.Enabled
+
+			elseif name == "Distance" then
+				component.Visible = cfg.ESP.ShowDistance
 			else
 				component.Visible = cfg.ESP.Enabled
 			end
@@ -168,12 +185,12 @@ end
 
 if cfg.UI then
 	local __module = loadstring(
-		game:HttpGet("https://raw.githubusercontent.com/qw2n/N-Library/refs/heads/main/Library.Source.lua")
+		game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
 	)()
 
 	local Window = __module:MakeWindow({
-		name = "Undetected ESP | v1.1",
-		theme = "PurpleAndBlack",
+		name = "Undetected ESP | v1.2",
+		theme = "Dark",
 
 		sizeX = 330,
 		sizeY = 400,
@@ -203,6 +220,14 @@ if cfg.UI then
 				Flag = cfg.ESP.TeamCheck,
 				callback = function(v: boolean)
 					cfg.ESP.TeamCheck = v
+				end
+			})
+
+			section:MakeToggle({
+				Text = "Show Distance",
+				Flag = cfg.ESP.ShowDistance,
+				callback = function(v: boolean)
+					cfg.ESP.ShowDistance = v
 				end
 			})
 
@@ -259,6 +284,70 @@ end))
 
 table.insert(getgenv().EspCache.Connections, Players.PlayerAdded:Connect(espClass.new))
 
+local function getCharacterBoundingBox(character)
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if not rootPart then return nil end
+	
+	local minX, minY, minZ = math.huge, math.huge, math.huge
+	local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
+	
+	for _, part in ipairs(character:GetChildren()) do
+		if part:IsA("BasePart") and part ~= rootPart then
+			local cf = part.CFrame
+			local size = part.Size
+			
+			local corners = {
+				cf * CFrame.new(size.X/2, size.Y/2, size.Z/2),
+				cf * CFrame.new(-size.X/2, size.Y/2, size.Z/2),
+				cf * CFrame.new(size.X/2, -size.Y/2, size.Z/2),
+				cf * CFrame.new(-size.X/2, -size.Y/2, size.Z/2),
+				cf * CFrame.new(size.X/2, size.Y/2, -size.Z/2),
+				cf * CFrame.new(-size.X/2, size.Y/2, -size.Z/2),
+				cf * CFrame.new(size.X/2, -size.Y/2, -size.Z/2),
+				cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2)
+			}
+			
+			for _, corner in ipairs(corners) do
+				local pos = corner.Position
+				minX = math.min(minX, pos.X)
+				minY = math.min(minY, pos.Y)
+				minZ = math.min(minZ, pos.Z)
+				maxX = math.max(maxX, pos.X)
+				maxY = math.max(maxY, pos.Y)
+				maxZ = math.max(maxZ, pos.Z)
+			end
+		end
+	end
+	
+	if minX == math.huge then
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			local height = humanoid.HipHeight + 2
+			local width = 2
+			local center = rootPart.Position
+			
+			minX = center.X - width
+			minY = center.Y - height/2
+			minZ = center.Z - width
+			maxX = center.X + width
+			maxY = center.Y + height/2
+			maxZ = center.Z + width
+		else
+			return nil
+		end
+	end
+	
+	return {
+		Min = Vector3.new(minX, minY, minZ),
+		Max = Vector3.new(maxX, maxY, maxZ),
+		Center = Vector3.new((minX + maxX)/2, (minY + maxY)/2, (minZ + maxZ)/2)
+	}
+end
+
+local function calculateDistance(position1, position2)
+	return (position1 - position2).Magnitude
+end
+
 table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(function()
 	local mouse = Owner:GetMouse()
 
@@ -268,9 +357,8 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 		local Box = getgenv().EspCache.Boxes[i]
 		if not Box then continue end
 
-		if not cfg.ESP.Enabled and not cfg.Tracer.Enabled then
+		if not cfg.ESP.Enabled and not cfg.Tracer.Enabled and not cfg.ESP.ShowDistance then
 			Box:HideBox()
-
 			continue
 		end
 
@@ -293,8 +381,8 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 		if Box.__cache.lastColor ~= cfg.ESP.Color then
 			Box.__cache.lastColor = cfg.ESP.Color
 
-			for _, i in Box.Components do
-				i.Color = cfg.ESP.Color
+			for _, component in Box.Components do
+				component.Color = cfg.ESP.Color
 			end
 		end
 
@@ -302,34 +390,61 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 		if not OnScreen then Box:HideBox() continue end
 
 		do
-			local Scale = Head.Size.Y/2
-			local Size = Vector3.new(2, 3, 0) * (Scale * 2)
-
-			local TL = camera:WorldToViewportPoint((RootPart.CFrame * CFrame.new(Size.X, Size.Y, 0)).p)
-			local TR = camera:WorldToViewportPoint((RootPart.CFrame * CFrame.new(-Size.X, Size.Y, 0)).p)
-			local BL = camera:WorldToViewportPoint((RootPart.CFrame * CFrame.new(Size.X, -Size.Y, 0)).p)
-			local BR = camera:WorldToViewportPoint((RootPart.CFrame * CFrame.new(-Size.X, -Size.Y, 0)).p)
-
+			local bbox = getCharacterBoundingBox(Character)
+			if not bbox then Box:HideBox() continue end
+			
+			local corners = {
+				TopLeft = Vector3.new(bbox.Min.X, bbox.Max.Y, bbox.Min.Z),
+				TopRight = Vector3.new(bbox.Max.X, bbox.Max.Y, bbox.Min.Z),
+				BottomLeft = Vector3.new(bbox.Min.X, bbox.Min.Y, bbox.Min.Z),
+				BottomRight = Vector3.new(bbox.Max.X, bbox.Min.Y, bbox.Min.Z),
+				TopLeftBack = Vector3.new(bbox.Min.X, bbox.Max.Y, bbox.Max.Z),
+				TopRightBack = Vector3.new(bbox.Max.X, bbox.Max.Y, bbox.Max.Z),
+				BottomLeftBack = Vector3.new(bbox.Min.X, bbox.Min.Y, bbox.Max.Z),
+				BottomRightBack = Vector3.new(bbox.Max.X, bbox.Min.Y, bbox.Max.Z)
+			}
+			
+			local screenCorners = {}
+			for name, corner in pairs(corners) do
+				local screenPos, visible = camera:WorldToViewportPoint(corner)
+				if visible then
+					screenCorners[name] = Vector2.new(screenPos.X, screenPos.Y)
+				else
+					local centerPos = camera:WorldToViewportPoint(bbox.Center)
+					screenCorners[name] = Vector2.new(centerPos.X, centerPos.Y)
+				end
+			end
+			
+			local minScreenX, minScreenY = math.huge, math.huge
+			local maxScreenX, maxScreenY = -math.huge, -math.huge
+			
+			for _, screenPos in pairs(screenCorners) do
+				minScreenX = math.min(minScreenX, screenPos.X)
+				minScreenY = math.min(minScreenY, screenPos.Y)
+				maxScreenX = math.max(maxScreenX, screenPos.X)
+				maxScreenY = math.max(maxScreenY, screenPos.Y)
+			end
+			
 			if cfg.ESP.Enabled then
-				Box.Components.Up.From = Vector2.new(TL.X, TL.Y)
-				Box.Components.Up.To = Vector2.new(TR.X, TR.Y)
+				Box.Components.Up.From = Vector2.new(minScreenX, minScreenY)
+				Box.Components.Up.To = Vector2.new(maxScreenX, minScreenY)
 
-				Box.Components.Left.From = Vector2.new(TL.X, TL.Y)
-				Box.Components.Left.To = Vector2.new(BL.X, BL.Y)
+				Box.Components.Down.From = Vector2.new(minScreenX, maxScreenY)
+				Box.Components.Down.To = Vector2.new(maxScreenX, maxScreenY)
 
-				Box.Components.Right.From = Vector2.new(TR.X, TR.Y)
-				Box.Components.Right.To = Vector2.new(BR.X, BR.Y)
+				Box.Components.Left.From = Vector2.new(minScreenX, minScreenY)
+				Box.Components.Left.To = Vector2.new(minScreenX, maxScreenY)
 
-				Box.Components.Down.From = Vector2.new(BL.X, BL.Y)
-				Box.Components.Down.To = Vector2.new(BR.X, BR.Y) 
+				Box.Components.Right.From = Vector2.new(maxScreenX, minScreenY)
+				Box.Components.Right.To = Vector2.new(maxScreenX, maxScreenY)
 			end
 
 			if cfg.Tracer.Enabled then
 				local tracerOrigin, tracerEnd = nil, nil
 
 				tracerEnd = Vector2.new(
-					(BL.X + BR.X) / 2,
-					(BL.Y + BR.Y) / 2
+					(minScreenX + maxScreenX) / 2,
+					maxScreenY
 				)
 
 				if cfg.Tracer.Origin == "Bottom" then
@@ -348,9 +463,27 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 				Box.Components.Tracer.From = tracerOrigin
 				Box.Components.Tracer.To = tracerEnd
 			end
+
+			if cfg.ESP.ShowDistance then
+				local localCharacter = Owner.Character
+				local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+				
+				if localRootPart then
+					local distance = calculateDistance(localRootPart.Position, RootPart.Position)
+					
+					local distanceText = string.format("%.1f studs", distance)
+					
+					local textPosition = Vector2.new(
+						(minScreenX + maxScreenX) / 2,
+						minScreenY - 20
+					)
+					
+					Box.Components.Distance.Position = textPosition
+					Box.Components.Distance.Text = distanceText
+				end
+			end
 		end
 
 		Box:ShowBox()
 	end
-
 end))
