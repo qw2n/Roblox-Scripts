@@ -13,8 +13,10 @@ local getgenv = check(getgenv, "Your executor not supported 'getgenv'")
 local cloneref = check(cloneref, "Your executor not supported 'cloneref'")
 local Drawing = check(Drawing, "Your executor not supported Drawing library")
 
-if getgenv().EspCache and getgenv().EspCache.Destroy then
-	getgenv().EspCache.Destroy()
+local genv = getgenv()
+
+if genv.EspCache and genv.EspCache.Destroy then
+	genv.EspCache.Destroy()
 end
 
 local Players = cloneref(game:GetService("Players")) :: Players
@@ -27,7 +29,6 @@ type espClassType = {
 	new: (plr: Player) -> espClassType,
 	RemoveBox: () -> nil,
 	HideBox: () -> nil,
-	ShowBox: () -> nil,
 
 	plr: Player,
 
@@ -54,7 +55,9 @@ local cfg = {
 
 	ESP = {
 		Enabled = false,
+        ShowBox = false,
 		TeamCheck = false,
+        ShowHealth = false,
 		ShowDistance = false,
 		
 		Color = Color3.fromRGB(255, 255, 255)
@@ -67,15 +70,15 @@ local cfg = {
 	}
 }
 
-getgenv().EspCache = {
+genv.EspCache = {
 	Boxes = {},
 	Connections = {},
 	Destroy = function()
-		for _, Box in getgenv().EspCache.Boxes do
+		for _, Box in genv.EspCache.Boxes do
 			Box:RemoveBox()
 		end
 
-		for _, i in getgenv().EspCache.Connections do
+		for _, i in genv.EspCache.Connections do
 			i:Disconnect()
 		end
 	end
@@ -86,7 +89,7 @@ local espClass do
 	espClass.__index = espClass
 
 	function espClass.new(plr: Player): espClassType
-		local old = getgenv().EspCache.Boxes[plr]
+		local old = genv.EspCache.Boxes[plr]
 		if old then return old end
 
 		local self = setmetatable({
@@ -139,16 +142,24 @@ local espClass do
 		Distance.Outline = true
 		Distance.Transparency = 1
 
-		self.Components = {
-			Up = Up,
-			Down = Down,
-			Left = Left,
-			Right = Right,
-			Tracer = Tracer,
-			Distance = Distance
-		}
+        local HP = Drawing.new("Line")
+        HP.Visible = false
+        HP.Color = Color3.fromRGB(0, 255, 0)
+        HP.Thickness = 3
+        HP.Transparency = 1
 
-		getgenv().EspCache.Boxes[plr] = self
+        self.Components = {
+            Up = Up,
+            Down = Down,
+            Left = Left,
+            Right = Right,
+            Tracer = Tracer,
+            Distance = Distance,
+            
+            HP = HP
+        }
+
+		genv.EspCache.Boxes[plr] = self
 
 		return self
 	end
@@ -158,8 +169,8 @@ local espClass do
 			i:Remove()
 		end
 
-		if getgenv().EspCache.Boxes[self.plr] then
-			getgenv().EspCache.Boxes[self.plr] = nil
+		if genv.EspCache.Boxes[self.plr] then
+			genv.EspCache.Boxes[self.plr] = nil
 		end
 	end
 
@@ -168,121 +179,7 @@ local espClass do
 			component.Visible = false
 		end
 	end
-
-	function espClass:ShowBox()
-		for name, component in self.Components do
-			if name == "Tracer" then
-				component.Visible = cfg.Tracer.Enabled
-
-			elseif name == "Distance" then
-				component.Visible = cfg.ESP.ShowDistance
-			else
-				component.Visible = cfg.ESP.Enabled
-			end
-		end
-	end
 end
-
-if cfg.UI then
-	local __module = loadstring(
-		game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
-	)()
-
-	local Window = __module:MakeWindow({
-		name = "Undetected ESP | v1.2",
-		theme = "Dark",
-
-		sizeX = 330,
-		sizeY = 400,
-	})
-
-	do
-		local tab = Window:MakeTab({
-			Text = "Main"
-		})
-
-		do
-			local section = tab:MakeSection({
-				Text = "ESP",
-				Column = 1
-			})
-
-			section:MakeToggle({
-				Text = "Enabled",
-				Flag = cfg.ESP.Enabled,
-				callback = function(v: boolean)
-					cfg.ESP.Enabled = v
-				end
-			})
-
-			section:MakeToggle({
-				Text = "Team Check",
-				Flag = cfg.ESP.TeamCheck,
-				callback = function(v: boolean)
-					cfg.ESP.TeamCheck = v
-				end
-			})
-
-			section:MakeToggle({
-				Text = "Show Distance",
-				Flag = cfg.ESP.ShowDistance,
-				callback = function(v: boolean)
-					cfg.ESP.ShowDistance = v
-				end
-			})
-
-			section:MakeColorPicker({
-				Text = "Color",
-				Default = cfg.ESP.Color,
-
-				callback = function(v)
-					cfg.ESP.Color = v
-				end
-			})
-		end
-
-		do
-			local section = tab:MakeSection({
-				Text = "Tracer",
-				Column = 1
-			})
-
-			section:MakeToggle({
-				Text = "Tracer Enabled",
-				Flag = cfg.Tracer.Enabled,
-
-				callback = function(v: boolean)
-					cfg.Tracer.Enabled = v
-				end
-			})
-
-			section:MakeDropdown({
-				Default = cfg.Tracer.Origin,
-				Content = {"Bottom", "Middle", "Top", "Cursor"},
-				multiChoice = false,
-
-				callback = function(v)
-					cfg.Tracer.Origin = v
-				end
-			})
-		end
-	end
-end
-
-for _, i in Players:GetPlayers() do
-	espClass.new(i)
-end
-
-table.insert(getgenv().EspCache.Connections, Players.PlayerRemoving:Connect(function(plr)
-	if Owner == plr then return end
-
-	local box = getgenv().EspCache.Boxes[plr]
-	if box then 
-		box:RemoveBox()
-	end
-end))
-
-table.insert(getgenv().EspCache.Connections, Players.PlayerAdded:Connect(espClass.new))
 
 local function getCharacterBoundingBox(character)
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -340,6 +237,7 @@ local function getCharacterBoundingBox(character)
 	return {
 		Min = Vector3.new(minX, minY, minZ),
 		Max = Vector3.new(maxX, maxY, maxZ),
+
 		Center = Vector3.new((minX + maxX)/2, (minY + maxY)/2, (minZ + maxZ)/2)
 	}
 end
@@ -348,17 +246,135 @@ local function calculateDistance(position1, position2)
 	return (position1 - position2).Magnitude
 end
 
-table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(function()
+if cfg.UI then
+	local __module = loadstring(
+		game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau") -- readfile("ui_library.txt")
+	)()
+
+	local Window = __module:MakeWindow({
+		name = "Undetected ESP | v1.2.1",
+		theme = "Dark",
+
+		sizeX = 330,
+		sizeY = 400,
+	})
+
+	do
+		local tab = Window:MakeTab({
+			Text = "Main"
+		})
+
+		do
+			local section = tab:MakeSection({
+				Text = "ESP",
+				Column = 1
+			})
+
+			section:MakeToggle({
+				Text = "Enabled",
+				Flag = cfg.ESP.Enabled,
+				callback = function(v: boolean)
+					cfg.ESP.Enabled = v
+				end
+			})
+
+			section:MakeToggle({
+				Text = "Team Check",
+				Flag = cfg.ESP.TeamCheck,
+				callback = function(v: boolean)
+					cfg.ESP.TeamCheck = v
+				end
+			})
+
+            section:MakeToggle({
+				Text = "Show Box",
+				Flag = cfg.ESP.ShowBox,
+				callback = function(v: boolean)
+					cfg.ESP.ShowBox = v
+				end
+			})
+
+			section:MakeToggle({
+				Text = "Show Distance",
+				Flag = cfg.ESP.ShowDistance,
+				callback = function(v: boolean)
+					cfg.ESP.ShowDistance = v
+				end
+			})
+
+            section:MakeToggle({
+				Text = "Show Health",
+				Flag = cfg.ESP.ShowHealth,
+				callback = function(v: boolean)
+					cfg.ESP.ShowHealth = v
+				end
+			})
+
+			section:MakeColorPicker({
+				Text = "Color",
+				Default = cfg.ESP.Color,
+
+				callback = function(v)
+					cfg.ESP.Color = v
+				end
+			})
+		end
+
+		do
+			local section = tab:MakeSection({
+				Text = "Tracer",
+				Column = 1
+			})
+
+			section:MakeToggle({
+				Text = "Tracer Enabled",
+				Flag = cfg.Tracer.Enabled,
+
+				callback = function(v: boolean)
+					cfg.Tracer.Enabled = v
+				end
+			})
+
+			section:MakeDropdown({
+				Default = cfg.Tracer.Origin,
+				Content = {"Bottom", "Middle", "Top", "Cursor"},
+				multiChoice = false,
+
+				callback = function(v)
+					cfg.Tracer.Origin = v
+				end
+			})
+		end
+	end
+end
+
+for _, i in Players:GetPlayers() do
+	espClass.new(i)
+end
+
+table.insert(genv.EspCache.Connections, Players.PlayerRemoving:Connect(function(plr)
+	if Owner == plr then return end
+
+	local box = genv.EspCache.Boxes[plr]
+	if box then 
+		box:RemoveBox()
+	end
+end))
+
+table.insert(genv.EspCache.Connections, Players.PlayerAdded:Connect(espClass.new))
+
+table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(function()
 	local mouse = Owner:GetMouse()
 
 	for _, i in Players:GetPlayers() do
 		if i == Owner then continue end
 
-		local Box = getgenv().EspCache.Boxes[i]
+		local Box = genv.EspCache.Boxes[i]
 		if not Box then continue end
 
-		if not cfg.ESP.Enabled and not cfg.Tracer.Enabled and not cfg.ESP.ShowDistance then
+		if not cfg.ESP.Enabled and not cfg.Tracer.Enabled then
 			Box:HideBox()
+
 			continue
 		end
 
@@ -370,6 +386,7 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 
 		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 		if not Humanoid then Box:HideBox() continue end
+        if Humanoid.Health == 0 then Box:HideBox() continue end
 
 		local Head = Character:FindFirstChild("Head")
 		if not Head then Box:HideBox() continue end
@@ -426,17 +443,81 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 			end
 			
 			if cfg.ESP.Enabled then
-				Box.Components.Up.From = Vector2.new(minScreenX, minScreenY)
-				Box.Components.Up.To = Vector2.new(maxScreenX, minScreenY)
+                if cfg.ESP.ShowBox then
+                    Box.Components.Up.From = Vector2.new(minScreenX, minScreenY)
+                    Box.Components.Up.To = Vector2.new(maxScreenX, minScreenY)
 
-				Box.Components.Down.From = Vector2.new(minScreenX, maxScreenY)
-				Box.Components.Down.To = Vector2.new(maxScreenX, maxScreenY)
+                    Box.Components.Down.From = Vector2.new(minScreenX, maxScreenY)
+                    Box.Components.Down.To = Vector2.new(maxScreenX, maxScreenY)
 
-				Box.Components.Left.From = Vector2.new(minScreenX, minScreenY)
-				Box.Components.Left.To = Vector2.new(minScreenX, maxScreenY)
+                    Box.Components.Left.From = Vector2.new(minScreenX, minScreenY)
+                    Box.Components.Left.To = Vector2.new(minScreenX, maxScreenY)
 
-				Box.Components.Right.From = Vector2.new(maxScreenX, minScreenY)
-				Box.Components.Right.To = Vector2.new(maxScreenX, maxScreenY)
+                    Box.Components.Right.From = Vector2.new(maxScreenX, minScreenY)
+                    Box.Components.Right.To = Vector2.new(maxScreenX, maxScreenY)
+
+					Box.Components.Up.Visible = true
+					Box.Components.Down.Visible = true
+					Box.Components.Left.Visible = true
+					Box.Components.Right.Visible = true
+				else
+					Box.Components.Up.Visible = false
+					Box.Components.Down.Visible = false
+					Box.Components.Left.Visible = false
+					Box.Components.Right.Visible = false
+                end
+
+                if cfg.ESP.ShowDistance then
+                    local localCharacter = Owner.Character
+                    local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+                    
+                    if localRootPart then
+                        local distance = calculateDistance(localRootPart.Position, RootPart.Position)
+                        
+                        local distanceText = string.format("%.1f studs", distance)
+                        
+                        local textPosition = Vector2.new(
+                            (minScreenX + maxScreenX) / 2,
+                            minScreenY - 20
+                        )
+                        
+                        Box.Components.Distance.Position = textPosition
+                        Box.Components.Distance.Text = distanceText
+                    end
+
+					Box.Components.Distance.Visible = true
+				else
+					Box.Components.Distance.Visible = false
+                end
+
+				local HP = Box.Components.HP
+                if cfg.ESP.ShowHealth then
+                    local hpPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+
+                    local barX = minScreenX - 6
+                    local barTop = minScreenY
+                    local barBottom = maxScreenY
+
+                    local hpY = barBottom - (barBottom - barTop) * hpPercent
+
+                    local hpColor
+                    if hpPercent > 0.5 then
+                        hpColor = Color3.fromRGB(0, 255, 0)
+
+                    elseif hpPercent > 0.2 then
+                        hpColor = Color3.fromRGB(255, 255, 0)
+                    else
+                        hpColor = Color3.fromRGB(255, 0, 0)
+                    end
+
+                    HP.Color = hpColor
+                    HP.From = Vector2.new(barX, barBottom)
+                    HP.To = Vector2.new(barX, hpY)
+
+                    HP.Visible = true
+				else
+					HP.Visible = false
+                end
 			end
 
 			if cfg.Tracer.Enabled then
@@ -462,28 +543,11 @@ table.insert(getgenv().EspCache.Connections, RunService.RenderStepped:Connect(fu
 
 				Box.Components.Tracer.From = tracerOrigin
 				Box.Components.Tracer.To = tracerEnd
-			end
 
-			if cfg.ESP.ShowDistance then
-				local localCharacter = Owner.Character
-				local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
-				
-				if localRootPart then
-					local distance = calculateDistance(localRootPart.Position, RootPart.Position)
-					
-					local distanceText = string.format("%.1f studs", distance)
-					
-					local textPosition = Vector2.new(
-						(minScreenX + maxScreenX) / 2,
-						minScreenY - 20
-					)
-					
-					Box.Components.Distance.Position = textPosition
-					Box.Components.Distance.Text = distanceText
-				end
+				Box.Components.Tracer.Visible = true
+			else
+				Box.Components.Tracer.Visible = false
 			end
 		end
-
-		Box:ShowBox()
 	end
 end))
