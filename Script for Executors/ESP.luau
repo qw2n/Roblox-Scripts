@@ -251,11 +251,12 @@ end
 
 if cfg.UI then
 	local __module = loadstring(
-		game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau") -- readfile("ui_library.txt")
+		--game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
+		readfile("ui_library.txt")
 	)()
 
 	local Window = __module:MakeWindow({
-		name = "Undetected ESP | v1.2.1",
+		name = "Undetected ESP | v1.2.2",
 		theme = "Dark",
 
 		sizeX = 330,
@@ -375,7 +376,7 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 		local Box = genv.EspCache.Boxes[i]
 		if not Box then continue end
 
-		if not cfg.ESP.Enabled and not cfg.Tracer.Enabled then
+		if not cfg.ESP.Enabled then
 			Box:HideBox()
 
 			continue
@@ -554,4 +555,3 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 		end
 	end
 end))
-
