@@ -1,7 +1,8 @@
 -- by BinaryCrypt (Aka Qwar1e)
--- Script: loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/Binary%20MM2.luau"))()
 -- Discord: binarycrypt
 -- Discord Server: https://discord.gg/pY6nDej76m
+
+-- Script: loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/Binary%20MM2.luau"))()
 
 local function check(a, b): any
     if not a then
