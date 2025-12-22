@@ -2,7 +2,7 @@
 -- Discord: binarycrypt
 -- Discord Server: https://discord.gg/pY6nDej76m
 
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/Anti-Kick.luau"))()
+-- Script: loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/Anti-Kick.luau"))()
 
 local function check(a, er)
 	if not a then
@@ -18,15 +18,23 @@ local hookfunction = check(hookfunction, "Your executor not supported 'hookfunct
 local hookmetamethod = check(hookmetamethod, "Your executor not supported 'hookmetamethod'")
 local getnamecallmethod = check(getnamecallmethod, "Your executor not supported 'getnamecallmethod'")
 
+local TeleportService = cloneref(game:GetService("TeleportService")) :: TeleportService
 local Players = cloneref(game:GetService("Players")) :: Players
 
 local plr = Players.LocalPlayer
 
-local __namecall; __namecall = hookmetamethod(game, "__namecall", newcclosure(function(self: Player, message: string, ...)
-	if self == plr then
-        local namecall = getnamecallmethod() :: string
+local owarn = warn
+local warn = newcclosure(function(...)
+    owarn("[!]", ...)
+end)
+
+local __namecall; __namecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+	local args = {...}
+    
+    local namecall = getnamecallmethod() :: string
+    if self == plr then
         if namecall == "Kick" or namecall == "kick" then
-            return warn("Trying kick with namecall with message:", message)
+            return warn("Trying kick player from game using by namecall with message:", args[1])
 
         elseif namecall == "Remove" or namecall == "remove" then
             return warn("Trying remove player from game using by namecall")
@@ -34,9 +42,29 @@ local __namecall; __namecall = hookmetamethod(game, "__namecall", newcclosure(fu
         elseif namecall == "Destroy" or namecall == "destroy" then
             return warn("Trying destroy player from game using by namecall")
         end
+
+    elseif self.ClassName == "TeleportService" then
+        if namecall == "Teleport" or namecall == "teleport" then
+            return warn("Trying to use 'TeleportService:Teleport' to kick player from game with namecall |", ...)
+        
+        elseif namecall == "TeleportAsync" then
+            return warn("Trying to use 'TeleportService:TeleportAsync' to kick player from game with namecall |", ...)
+
+        elseif namecall == "TeleportPartyAsync" then
+            return warn("Trying to use 'TeleportService:TeleportPartyAsync' to kick player from game with namecall |", ...)
+
+        elseif namecall == "TeleportToPlaceInstance" then
+            return warn("Trying to use 'TeleportService:TeleportToPlaceInstance' to kick player from game with namecall |", ...)
+
+        elseif namecall == "TeleportToPrivateServer" then
+            return warn("Trying to use 'TeleportService:TeleportToPrivateServer' to kick player from game with namecall |", ...)
+
+        elseif namecall == "TeleportToSpawnByName" then
+            return warn("Trying to use 'TeleportService:TeleportToSpawnByName' to kick player from game with namecall |", ...)
+        end
     end
 
-	return __namecall(self, message, ...)
+	return __namecall(self, ...)
 end))
 
 local Kick; Kick = hookfunction(plr.Kick, newcclosure(function(self: Player, message: string)
@@ -63,3 +91,58 @@ local Remove; Remove = hookfunction(game.Remove, newcclosure(function(self: Inst
 	return Remove(self)
 end))
 
+--// Teleport Service \\--
+
+local Teleport; Teleport = hookfunction(TeleportService.Teleport, newcclosure(function(self: TeleportService, ...)
+    local args = {...}
+    if args[2] == plr then
+        return warn("Trying to use 'TeleportService:Teleport' to kick player from game without namecall |", ...)
+    end
+
+    return Teleport(self, ...)
+end))
+
+local TeleportAsync; TeleportAsync = hookfunction(TeleportService.TeleportAsync, newcclosure(function(self: TeleportService, ...)
+    local args = {...}
+    if args[2] and typeof(args[2]) == "table" and table.find(args[2], plr) then
+        return warn("Trying to use 'TeleportService:TeleportAsync' to kick player from game without namecall |", ...)
+    end
+
+    return TeleportAsync(self, ...)
+end))
+
+local TeleportPartyAsync; TeleportPartyAsync = hookfunction(TeleportService.TeleportPartyAsync, newcclosure(function(self: TeleportService, ...)
+    local args = {...}
+    if args[2] and typeof(args[2]) == "table" and table.find(args[2], plr) then
+        return warn("Trying to use 'TeleportService:TeleportPartyAsync' to kick player from game without namecall |", ...)
+    end
+
+    return TeleportPartyAsync(self, ...)
+end))
+
+local TeleportToPlaceInstance; TeleportToPlaceInstance = hookfunction(TeleportService.TeleportToPlaceInstance, newcclosure(function(self: TeleportService, ...)
+    local args = {...}
+    if args[3] == plr then
+        return warn("Trying to use 'TeleportService:TeleportToPlaceInstance' to kick player from game without namecall |", ...)
+    end
+
+    return TeleportToPlaceInstance(self, ...)
+end))
+
+local TeleportToPrivateServer; TeleportToPrivateServer = hookfunction(TeleportService.TeleportToPrivateServer, newcclosure(function(self: TeleportService, ...)
+    local args = {...}
+    if args[3] and typeof(args[3]) == "table" and table.find(args[3], plr) then
+        return warn("Trying to use 'TeleportService:TeleportToPrivateServer' to kick player from game without namecall |", ...)
+    end
+
+    return TeleportToPrivateServer(self, ...)
+end))
+
+local TeleportToSpawnByName; TeleportToSpawnByName = hookfunction(TeleportService.TeleportToSpawnByName, newcclosure(function(self: TeleportService, ...)
+    local args = {...}
+    if args[3] == plr then
+        return warn("Trying to use 'TeleportService:TeleportToSpawnByName' to kick player from game without namecall |", ...)
+    end
+
+    return TeleportToSpawnByName(self, ...)
+end))
