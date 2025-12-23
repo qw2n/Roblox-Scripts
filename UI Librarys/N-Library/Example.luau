@@ -1,3 +1,11 @@
+-- by BinaryCrypt (Aka Qwar1e)
+-- Discord: binarycrypt
+-- Discrod Server: https://discord.gg/pY6nDej76m
+
+-- Docs: https://github.com/qw2n/Roblox-Scripts/blob/main/UI%20Librarys/N-Library/Properties%20and%20methods.luau
+-- Example: https://github.com/qw2n/Roblox-Scripts/blob/main/UI%20Librarys/N-Library/Example.luau
+-- Loadstring: loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau"))()
+
 local NLib 		= loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau"))()
 
 local wind = NLib:MakeWindow({
