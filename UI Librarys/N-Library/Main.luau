@@ -1,13 +1,40 @@
-local inputService = game:GetService("UserInputService")
-local tweenService = game:GetService("TweenService")
-local coreGui = game:GetService("CoreGui")
+-- Rewritted by BinaryCrypt (Aka Qwar1e)
+-- Discord: binarycrypt
+-- Discrod Server: https://discord.gg/pY6nDej76m
 
-if coreGui:FindFirstChild("QUI.Lib") then
-	coreGui:FindFirstChild("QUI.Lib"):Destroy()
-	coreGui:FindFirstChild("QUI.AI.Lib"):Destroy()
+-- Docs: https://github.com/qw2n/Roblox-Scripts/blob/main/UI%20Librarys/N-Library/Properties%20and%20methods.luau
+-- Example: https://github.com/qw2n/Roblox-Scripts/blob/main/UI%20Librarys/N-Library/Example.luau
+-- Loadstring: loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau"))()
+
+local function check(a, b)
+    if not a then
+        error(`[!] {b}`, 2)
+    end
+
+    return a
 end
 
-local library = {flags = {}, toggled = true, dragSpeed = 0.1}
+local cloneref = check(cloneref, "Your executor not support cloneref")
+
+local UserInputService = cloneref(game:GetService("UserInputService")) :: UserInputService
+local TweenService = cloneref(game:GetService("TweenService")) :: TweenService
+local Players = cloneref(game:GetService("Players")) :: Players
+local CoreGui = cloneref(game:GetService("CoreGui")) :: CoreGui
+
+do
+    local QUILib = CoreGui:FindFirstChild("QUI.Lib")
+    if QUILib then
+        QUILib:Destroy()
+    end
+end
+
+local library = {
+    flags = {},
+
+    toggled = true,
+
+    dragSpeed = 0.1
+}
 
 local themes = {
 	Dark = {
@@ -108,34 +135,124 @@ local themes = {
 		TabBackground = Color3.fromRGB(29, 29, 29),
 	},
 	
-	NextHub = {
-		TextColor = Color3.fromRGB(255, 255, 255),
-		MainFrame = Color3.fromRGB(75, 74, 74),
-		TabBackground = Color3.fromRGB(60, 57, 57),
-		Tab = Color3.fromRGB(44, 43, 43),
-		EnabledText = Color3.fromRGB(255, 255, 255),
-		DisabledText = Color3.fromRGB(120, 120, 120),
-		TabToggleEnabled = Color3.fromRGB(44, 43, 43),
-		TabToggleDisabled = Color3.fromRGB(5, 5, 5),
-		TabToggleDisabledMouseOver = Color3.fromRGB(20, 20, 20),
-		Section = Color3.fromRGB(0, 0, 0),
-		Button = Color3.fromRGB(60, 57, 57),
-		ButtonMouseOver = Color3.fromRGB(75, 74, 74),
-		ToggleEnabled = Color3.fromRGB(9, 255, 0),
-		ToggleEnabledMouseOver = Color3.fromRGB(44, 167, 39),
-		ToggleDisabled = Color3.fromRGB(255, 0, 0),
-		ToggleDisabledMouseOver = Color3.fromRGB(182, 29, 29),
-		Box = Color3.fromRGB(60, 57, 57),
-		BoxFocused = Color3.fromRGB(75, 74, 74),
-		Slider = Color3.fromRGB(60, 57, 57),
-		SliderMouseOver = Color3.fromRGB(75, 74, 74),
-		SliderFill = Color3.fromRGB(132, 74, 182),
-		SliderFillSliding = Color3.fromRGB(132, 74, 182),
-		Dropdown = Color3.fromRGB(60, 57, 57),
-		DropdownMouseOver = Color3.fromRGB(75, 74, 74),
-		DropdownContent = Color3.fromRGB(20, 20, 20),
-		ColorPicker = Color3.fromRGB(30, 30, 30),
-		ColorPickerBoxes = Color3.fromRGB(30, 30, 30)
+	Wave = {
+		TextColor = Color3.fromRGB(230, 240, 255),
+		MainFrame = Color3.fromRGB(25, 40, 60),
+		TabBackground = Color3.fromRGB(20, 35, 55),
+		Tab = Color3.fromRGB(30, 45, 65),
+		EnabledText = Color3.fromRGB(240, 250, 255),
+		DisabledText = Color3.fromRGB(150, 180, 200),
+		TabToggleEnabled = Color3.fromRGB(70, 150, 220),
+		TabToggleDisabled = Color3.fromRGB(35, 50, 70),
+		TabToggleDisabledMouseOver = Color3.fromRGB(45, 60, 85),
+		Section = Color3.fromRGB(15, 30, 50),
+		Button = Color3.fromRGB(60, 140, 210),
+		ButtonMouseOver = Color3.fromRGB(80, 160, 230),
+		ToggleEnabled = Color3.fromRGB(80, 200, 180),
+		ToggleEnabledMouseOver = Color3.fromRGB(100, 220, 200),
+		ToggleDisabled = Color3.fromRGB(220, 100, 100),
+		ToggleDisabledMouseOver = Color3.fromRGB(240, 120, 120),
+		Box = Color3.fromRGB(40, 55, 75),
+		BoxFocused = Color3.fromRGB(50, 70, 95),
+		Slider = Color3.fromRGB(45, 60, 80),
+		SliderMouseOver = Color3.fromRGB(55, 75, 100),
+		SliderFill = Color3.fromRGB(100, 180, 255),
+		SliderFillSliding = Color3.fromRGB(120, 200, 255),
+		Dropdown = Color3.fromRGB(40, 55, 75),
+		DropdownMouseOver = Color3.fromRGB(50, 70, 95),
+		DropdownContent = Color3.fromRGB(25, 40, 65),
+		ColorPicker = Color3.fromRGB(35, 50, 70),
+		ColorPickerBoxes = Color3.fromRGB(30, 45, 65)
+	},
+
+	Cosmic = {
+		TextColor = Color3.fromRGB(230, 230, 255),
+		MainFrame = Color3.fromRGB(20, 15, 40),
+		TabBackground = Color3.fromRGB(15, 10, 35),
+		Tab = Color3.fromRGB(25, 20, 45),
+		EnabledText = Color3.fromRGB(240, 240, 255),
+		DisabledText = Color3.fromRGB(140, 140, 180),
+		TabToggleEnabled = Color3.fromRGB(120, 100, 220),
+		TabToggleDisabled = Color3.fromRGB(30, 25, 55),
+		TabToggleDisabledMouseOver = Color3.fromRGB(40, 35, 75),
+		Section = Color3.fromRGB(10, 5, 30),
+		Button = Color3.fromRGB(100, 80, 200),
+		ButtonMouseOver = Color3.fromRGB(120, 100, 220),
+		ToggleEnabled = Color3.fromRGB(80, 180, 220),
+		ToggleEnabledMouseOver = Color3.fromRGB(100, 200, 240),
+		ToggleDisabled = Color3.fromRGB(220, 80, 150),
+		ToggleDisabledMouseOver = Color3.fromRGB(240, 100, 170),
+		Box = Color3.fromRGB(35, 30, 60),
+		BoxFocused = Color3.fromRGB(45, 40, 80),
+		Slider = Color3.fromRGB(40, 35, 70),
+		SliderMouseOver = Color3.fromRGB(50, 45, 90),
+		SliderFill = Color3.fromRGB(160, 140, 255),
+		SliderFillSliding = Color3.fromRGB(180, 160, 255),
+		Dropdown = Color3.fromRGB(35, 30, 60),
+		DropdownMouseOver = Color3.fromRGB(45, 40, 80),
+		DropdownContent = Color3.fromRGB(20, 15, 45),
+		ColorPicker = Color3.fromRGB(30, 25, 50),
+		ColorPickerBoxes = Color3.fromRGB(25, 20, 45)
+	},
+
+	Sunset = {
+		TextColor = Color3.fromRGB(255, 245, 235),
+		MainFrame = Color3.fromRGB(60, 40, 60),
+		TabBackground = Color3.fromRGB(55, 35, 55),
+		Tab = Color3.fromRGB(65, 45, 65),
+		EnabledText = Color3.fromRGB(255, 250, 240),
+		DisabledText = Color3.fromRGB(180, 160, 180),
+		TabToggleEnabled = Color3.fromRGB(255, 140, 80),
+		TabToggleDisabled = Color3.fromRGB(70, 50, 70),
+		TabToggleDisabledMouseOver = Color3.fromRGB(85, 65, 85),
+		Section = Color3.fromRGB(50, 30, 50),
+		Button = Color3.fromRGB(255, 120, 60),
+		ButtonMouseOver = Color3.fromRGB(255, 140, 80),
+		ToggleEnabled = Color3.fromRGB(255, 180, 100),
+		ToggleEnabledMouseOver = Color3.fromRGB(255, 200, 120),
+		ToggleDisabled = Color3.fromRGB(200, 100, 140),
+		ToggleDisabledMouseOver = Color3.fromRGB(220, 120, 160),
+		Box = Color3.fromRGB(75, 55, 75),
+		BoxFocused = Color3.fromRGB(90, 70, 90),
+		Slider = Color3.fromRGB(80, 60, 80),
+		SliderMouseOver = Color3.fromRGB(95, 75, 95),
+		SliderFill = Color3.fromRGB(255, 160, 100),
+		SliderFillSliding = Color3.fromRGB(255, 180, 120),
+		Dropdown = Color3.fromRGB(75, 55, 75),
+		DropdownMouseOver = Color3.fromRGB(90, 70, 90),
+		DropdownContent = Color3.fromRGB(60, 40, 60),
+		ColorPicker = Color3.fromRGB(70, 50, 70),
+		ColorPickerBoxes = Color3.fromRGB(65, 45, 65)
+	},
+
+	Metalic = {
+		TextColor = Color3.fromRGB(200, 200, 200),
+		MainFrame = Color3.fromRGB(25, 25, 30),
+		TabBackground = Color3.fromRGB(20, 20, 25),
+		Tab = Color3.fromRGB(30, 30, 35),
+		EnabledText = Color3.fromRGB(210, 210, 210),
+		DisabledText = Color3.fromRGB(120, 120, 130),
+		TabToggleEnabled = Color3.fromRGB(80, 100, 140),
+		TabToggleDisabled = Color3.fromRGB(35, 35, 42),
+		TabToggleDisabledMouseOver = Color3.fromRGB(45, 45, 55),
+		Section = Color3.fromRGB(15, 15, 20),
+		Button = Color3.fromRGB(60, 80, 120),
+		ButtonMouseOver = Color3.fromRGB(80, 100, 140),
+		ToggleEnabled = Color3.fromRGB(100, 140, 100),
+		ToggleEnabledMouseOver = Color3.fromRGB(120, 160, 120),
+		ToggleDisabled = Color3.fromRGB(140, 80, 100),
+		ToggleDisabledMouseOver = Color3.fromRGB(160, 100, 120),
+		Box = Color3.fromRGB(32, 32, 38),
+		BoxFocused = Color3.fromRGB(40, 40, 48),
+		Slider = Color3.fromRGB(35, 35, 42),
+		SliderMouseOver = Color3.fromRGB(45, 45, 55),
+		SliderFill = Color3.fromRGB(100, 120, 160),
+		SliderFillSliding = Color3.fromRGB(120, 140, 180),
+		Dropdown = Color3.fromRGB(32, 32, 38),
+		DropdownMouseOver = Color3.fromRGB(40, 40, 48),
+		DropdownContent = Color3.fromRGB(25, 25, 32),
+		ColorPicker = Color3.fromRGB(30, 30, 38),
+		ColorPickerBoxes = Color3.fromRGB(28, 28, 36)
 	}
 }
 
@@ -173,7 +290,7 @@ function utility.create(class, properties)
 end
 
 function utility.tween(obj, info, properties, callback)
-	local anim = tweenService:Create(obj, TweenInfo.new(unpack(info)), properties)
+	local anim = TweenService:Create(obj, TweenInfo.new(unpack(info)), properties)
 	anim:Play()
 
 	if callback then
@@ -210,13 +327,13 @@ function utility.drag(obj)
 		end
 	end)
 
-	inputService.InputChanged:Connect(function(input)
+	UserInputService.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then   
 			utility.tween(obj, {library.dragSpeed}, {Position = UDim2.new(objPosition.X.Scale, objPosition.X.Offset + (input.Position - start).X, objPosition.Y.Scale, objPosition.Y.Offset + (input.Position - start).Y)})
 		end
 	end)
 
-	inputService.InputChanged:Connect(function(input)
+	UserInputService.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.Touch and dragging then   
 			utility.tween(obj, {library.dragSpeed}, {Position = UDim2.new(objPosition.X.Scale, objPosition.X.Offset + (input.Position - start).X, objPosition.Y.Scale, objPosition.Y.Offset + (input.Position - start).Y)})
 		end
@@ -249,6 +366,7 @@ function utility.format_table(tbl)
 			__newindex = function(t, k, v)
 				rawset(newtbl, k:lower(), v)
 			end,
+            
 			__index = function(t, k, v)
 				return newtbl[k:lower()]
 			end
@@ -262,29 +380,13 @@ end
 
 local QUI = utility.create("ScreenGui", {})
 QUI.Name = "QUI.Lib"
-QUI.Parent = coreGui
+QUI.Parent = CoreGui
 
-local QUIAI = utility.create("ScreenGui",{})
-QUIAI.Name = "QUI.AI.Lib"
-QUIAI.Parent = coreGui
-
-local IconButton 					= Instance.new("ImageButton", QUIAI)
-IconButton.Image 					= "http://www.roblox.com/asset/?id=14897081705"
-IconButton.Size 					= UDim2.new(0, 40,0, 40)
-IconButton.Position					= UDim2.new(0, 0,0.448, 0)
-IconButton.BackgroundTransparency 	= 1
-
-Instance.new("UICorner", IconButton)
-
-IconButton.MouseButton1Click:Connect(function()
-	QUI.Enabled = not QUI.Enabled
-end)
-
-
-local Mouse = game:GetService("Players").LocalPlayer:GetMouse()
+local Mouse = Players.LocalPlayer:GetMouse()
 Mouse.KeyDown:Connect(function(Key)
 	if Key == "z" then
 		library.toggled = not library.toggled
+
 		QUI.Enabled = library.toggled
 	end
 end)
@@ -400,7 +502,6 @@ function library:MakeWindow(opts)
 
 	function windowTypes:Destroy()
 		QUI:Destroy()
-		QUIAI:Destroy()
 	end
 
 	function windowTypes:MakeTab(optss)
@@ -1027,7 +1128,7 @@ function library:MakeWindow(opts)
 					end
 				end)
 
-				inputService.InputChanged:Connect(function(input)
+				UserInputService.InputChanged:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseMovement then
 						if sliding then
 							slide(input)
@@ -1809,7 +1910,7 @@ function library:MakeWindow(opts)
 					utility.tween(value, {0.2}, {TextColor3 = theme.DisabledText})
 
 					local binding
-					binding = inputService.InputBegan:Connect(function(input)
+					binding = UserInputService.InputBegan:Connect(function(input)
 						local key = keys[input.KeyCode] or keys[input.UserInputType]
 						value.Text = (keys[key] or tostring(input.KeyCode):gsub("Enum.KeyCode.", ""))
 						utility.tween(value, {0.2}, {TextColor3 = theme.EnabledText})
@@ -1838,7 +1939,7 @@ function library:MakeWindow(opts)
 					end)
 				end)
 
-				inputService.InputBegan:Connect(function(input)
+				UserInputService.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Keyboard then
 						if input.KeyCode == keyChosen then
 							callback(keyChosen)
@@ -2038,7 +2139,7 @@ function library:MakeWindow(opts)
 					utility.tween(value, {0.2}, {TextColor3 = theme.DisabledText})
 
 					local binding
-					binding = inputService.InputBegan:Connect(function(input)
+					binding = UserInputService.InputBegan:Connect(function(input)
 						local key = keys[input.KeyCode] or keys[input.UserInputType]
 						value.Text = key or (tostring(input.KeyCode):gsub("Enum.KeyCode.", ""))
 						value.Size = UDim2.new(0, value.TextBounds.X, 0, 10)
@@ -2067,7 +2168,7 @@ function library:MakeWindow(opts)
 					end)
 				end)
 
-				inputService.InputBegan:Connect(function(input)
+				UserInputService.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Keyboard then
 						if input.KeyCode == keyChosen then
 							toggleToggle()
@@ -2356,7 +2457,7 @@ function library:MakeWindow(opts)
 					end
 				end)
 
-				inputService.InputChanged:Connect(function(input)
+				UserInputService.InputChanged:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseMovement then
 						if slidingHue then
 							updateHue(input)
@@ -2403,7 +2504,7 @@ function library:MakeWindow(opts)
 					end
 				end)
 
-				inputService.InputChanged:Connect(function(input)
+				UserInputService.InputChanged:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseMovement then
 						if slidingSaturation then
 							updateSatVal(input)
@@ -2776,7 +2877,7 @@ function library:MakeWindow(opts)
 					end
 				end)
 
-				inputService.InputChanged:Connect(function(input)
+				UserInputService.InputChanged:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseMovement then
 						if slidingHue then
 							updateHue(input)
@@ -2819,7 +2920,7 @@ function library:MakeWindow(opts)
 					end
 				end)
 
-				inputService.InputChanged:Connect(function(input)
+				UserInputService.InputChanged:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseMovement then
 						if slidingSaturation then
 							updateSatVal(input)
