@@ -1,4 +1,13 @@
 --[[
+Themes:
+	+ Dark
+	+ White
+	+ PurpleAndBlack
+	+ Cosmic
+	+ Sunset
+	+ Wave
+	+ Metalic
+
 #-----# WINDOW #-----#
 
 :MakeWindow()
