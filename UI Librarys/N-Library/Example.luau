@@ -12,7 +12,7 @@ local wind = NLib:MakeWindow({
     name = "Name Hub",
     sizeX = 330,
     sizeY = 360,
-    theme = "Light"
+    theme = "Dark"
 })
 
 local tab = wind:MakeTab({
