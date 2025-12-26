@@ -12,10 +12,11 @@ local function check(a, b): any
     return a
 end
 
-local getgenv = check(getgenv, "Your executor not support getgenv")
-local cloneref = check(cloneref, "Your executor not support cloneref")
+local getgenv = check(getgenv, "Your executor not support 'getgenv'")
+local cloneref = check(cloneref, "Your executor not support 'cloneref'")
+local setclipboard = check(setclipboard, "Your executor not support 'setclipboard'")
 
-local g_huge = math.huge
+local g_const_huge = math.huge
 local g_kill_mainthread = false
 
 local c_tween = nil
@@ -23,25 +24,12 @@ local c_bodyvelocity = nil
 
 local genv = getgenv()
 
-if genv.AutoFarmer then
-	genv.AutoFarmer.Destroy()
+if genv.BinaryMM2 then
+	genv.BinaryMM2.Destroy()
 end
 
-genv.AutoFarmer = {
-	Destroy = function()
-		g_kill_mainthread = true
-
-		if c_tween then
-			c_tween:Cancel()
-		end
-
-		if c_bodyvelocity then
-			c_bodyvelocity:Destroy()
-		end
-	end
-}
-
 local TweenService = cloneref(game:GetService("TweenService")) :: TweenService
+local RunService = cloneref(game:GetService("RunService")) :: RunService
 local Players = cloneref(game:GetService("Players")) :: Players
 
 local plr = Players.LocalPlayer
@@ -50,6 +38,11 @@ local PlayerGui = plr.PlayerGui
 local cfg = {
 	Autofarm = {
 		Enabled = false
+	},
+
+	Misc = {
+		Noclip = false,
+		AntiFling = false
 	}
 }
 
@@ -119,11 +112,11 @@ local function GetRootPart(): Part?
 end
 
 local function GetNearestCoin(RootPart: Part): Part & number
-	if not RootPart then print("rootpart not found") return nil end
-	if not CoinContainer then print("CoinContainer not found") return nil end
+	if not RootPart then return nil end
+	if not CoinContainer then return nil end
 
 	local lastCoin = nil
-	local lastDistance = g_huge
+	local lastDistance = g_const_huge
 
 	for _, i in CoinContainer:GetChildren() do
 		if i:IsA("Part") then
@@ -140,9 +133,41 @@ local function GetNearestCoin(RootPart: Part): Part & number
 	local Time = lastDistance/10
 	return lastCoin, if Time > 2 then 2
 	else if
-		Time < 1 then 0.1
+		Time < 1.2 then 0.1
 		else 1
 end
+
+local function FixCharacterCollisions(Character: Model)
+	if not Character then return end
+
+	local LowerTorso = Character:FindFirstChild("LowerTorso")
+	if LowerTorso and not LowerTorso.CanCollide then
+		LowerTorso.CanCollide = true
+	end
+
+	local UpperTorso = Character:FindFirstChild("UpperTorso")
+	if UpperTorso and not UpperTorso.CanCollide then
+		UpperTorso.CanCollide = true
+	end
+end
+
+genv.BinaryMM2 = {
+	Destroy = function()
+		g_kill_mainthread = true
+
+		if c_tween then
+			c_tween:Cancel()
+		end
+
+		if c_bodyvelocity then
+			c_bodyvelocity:Destroy()
+		end
+
+		for _, i in Players:GetPlayers() do
+			FixCharacterCollisions(i)
+		end
+	end
+}
 
 local __module = loadstring(
 	game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
@@ -150,45 +175,138 @@ local __module = loadstring(
 )()
 
 local Window = __module:MakeWindow({
-	name = "Binary MM2 | v1.0.0",
-	theme = "Dark",
+	name = "Binary MM2 | v1.0.1",
+	theme = "Metalic",
 
 	sizeX = 330,
 	sizeY = 400,
-})
+}) 
 
-do
+local StatusLabel do
+    local tab = Window:MakeTab({
+        Text = "Home"
+    }) do
+        local section = tab:MakeSection({
+            Text = "Info",
+            Column = 1
+        }) do
+            section:MakeLabel({
+                Text = "by Qwar1e"
+            })
+
+            section:MakeButton({
+                Text = "Copy discord link",
+
+				callback = function()
+					setclipboard("https://discord.gg/pY6nDej76m")
+				end
+            })
+        end
+    end
+
 	local tab = Window:MakeTab({
 		Text = "Main"
-	})
+	}) do
+		local NoclipButton, AntiFlingButton
 
-	do
 		local section = tab:MakeSection({
 			Text = "AutoFarm",
 			Column = 1
-		})
+		}) do
+            section:MakeToggle({
+                Text = "Enable",
+                Flag = cfg.Autofarm.Enabled,
+                callback = function(v: boolean)
+                    cfg.Autofarm.Enabled = v
 
-		section:MakeToggle({
-			Text = "Enabled",
-			Flag = cfg.Autofarm.Enabled,
-			callback = function(v: boolean)
-				cfg.Autofarm.Enabled = v
+					NoclipButton:Toggle(v)
+					AntiFlingButton:Toggle(v)
 
-				if not cfg.Autofarm.Enabled then
-					if c_tween then
-						c_tween:Cancel()
-					end
+                    if not cfg.Autofarm.Enabled then
+                        if c_tween then
+                            c_tween:Cancel()
+                        end
 
-					if c_bodyvelocity then
-						c_bodyvelocity:Destroy()
+                        if c_bodyvelocity then
+                            c_bodyvelocity:Destroy()
+                        end
+                    end
+                end
+            })
+
+            StatusLabel = section:MakeLabel({
+                Text = "Status: None"
+            })
+        end
+
+		local section = tab:MakeSection({
+			Text = "Misc",
+			Column = 2
+		}) do
+			NoclipButton = section:MakeToggle({
+				Text = "Noclip",
+				Flag = cfg.Misc.Noclip,
+				callback = function(v)
+					cfg.Misc.Noclip = v
+
+					if not cfg.Misc.Noclip then
+						FixCharacterCollisions(plr.Character)
 					end
 				end
-			end
-		})
+			})
+
+			AntiFlingButton = section:MakeToggle({
+				Text = "Anti-Fling",
+				Flag = cfg.Misc.AntiFling,
+				callback = function(v)
+					cfg.Misc.AntiFling = v
+
+					if not cfg.Misc.AntiFling then
+						for _, i in Players:GetPlayers() do
+							if i == plr then continue end
+
+							FixCharacterCollisions(i.Character)
+						end
+					end
+				end
+			})
+		end
 	end
 end
 
-while task.wait() do
+local connection; connection = RunService.RenderStepped:Connect(function()
+	if IsThreadQueueToDestroy() then
+		return connection:Disconnect()
+	end
+
+	local Character = plr.Character
+	if Character then
+		if cfg.Misc.AntiFling then
+			for _, i in Players:GetPlayers() do
+				if i == plr then continue end
+				
+				local Character = i.Character
+				if Character then
+					for _, i in Character:GetChildren() do
+						if i and i:IsA("BasePart") and i.CanCollide then
+							i.CanCollide = false
+						end
+					end
+				end
+			end
+		end
+
+		if cfg.Misc.Noclip then
+			for _, i in plr.Character:GetDescendants() do
+				if i:IsA("BasePart") and i.CanCollide then
+					i.CanCollide = false
+				end
+			end
+		end
+	end
+end)
+
+while task.wait(0.01) do
 	if IsThreadQueueToDestroy() then
 		break
 	end
@@ -198,13 +316,20 @@ while task.wait() do
 			c_bodyvelocity:Destroy()
 		end
 
+        StatusLabel:SetText("Status: Disabled")
+
 		continue
 	end
 
-	CoinContainer = FeatchObject(workspace, "CoinContainer", "Model")
-	CoinCounter = FeatchObject(PlayerGui, "SnowToken", "Frame")
+	if not CoinContainer or (CoinContainer and CoinContainer.Parent == nil) then
+        CoinContainer = FeatchObject(workspace, "CoinContainer", "Model")
+    end
+
+	if not CoinCounter or (CoinCounter and CoinCounter.Parent == nil) then
+        CoinCounter = FeatchObject(PlayerGui, "SnowToken", "Frame")
+    end
 	
-	if not IsReadyToFarm() then continue end
+	if not IsReadyToFarm() then StatusLabel:SetText("Status: Waiting game...") continue end
 
 	if IsCoinsBagFull() then
 		local Humanoid = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
@@ -212,17 +337,21 @@ while task.wait() do
 			Humanoid.Health = 0
 		end
 
+        StatusLabel:SetText("Status: Coins bag is full!")
+
 		continue
 	end
 
 	local RootPart = GetRootPart()
-	if not RootPart then continue end
+	if not RootPart then StatusLabel:SetText("Status: Player is dead!") continue end
 
 	SetBodyVelocity(RootPart)
 
 	local Coin, Time = GetNearestCoin(RootPart)
 	if not Coin then continue end
 	if not IsCoinAlive(Coin) then continue end
+
+    StatusLabel:SetText("Status: Farming coins...")
 
 	local Tween = TweenService:Create(RootPart, TweenInfo.new(
 		Time,
@@ -239,26 +368,13 @@ while task.wait() do
 
 	c_tween = Tween
 
-	while Tween.PlaybackState == Enum.PlaybackState.Playing and task.wait(0.1) do
-		if IsThreadQueueToDestroy() then
-			break
-		end
-
-		if not IsCoinAlive(Coin) then
-			break
-		end
-	end
+    repeat task.wait(0.1)
+    until Tween.PlaybackState == Enum.PlaybackState.Playing or IsThreadQueueToDestroy() or not IsCoinAlive(Coin)
 
 	if not IsCoinAlive(Coin) then continue end
 
-	local lastTick = tick()
-	while tick() - lastTick > 1 and task.wait(0.1) do
-		if IsThreadQueueToDestroy() then
-			break
-		end
+    local lastTick = tick()
 
-		if not IsCoinAlive(Coin) then
-			break
-		end
-	end
+    repeat task.wait(0.1)
+    until tick() - lastTick > 1 or IsThreadQueueToDestroy() or not IsCoinAlive(Coin)
 end
