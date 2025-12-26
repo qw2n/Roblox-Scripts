@@ -823,7 +823,7 @@ function library:MakeWindow(opts)
 
 			function sectionTypes:MakeButton(opts)
 				local options = utility.format_table(opts)
-				local name = options.name
+				local name = options.Text
 				local callback = options.callback
 
 				local button = utility.create("TextButton", {
@@ -2043,7 +2043,7 @@ function library:MakeWindow(opts)
 
 			function sectionTypes:MakeToggleKeybind(opts)
 				local options = utility.format_table(opts)
-				local name = options.name
+				local name = options.Text
 				local default = options.default
 				local keybindFlag = options.keybindFlag or nil
 				local toggleFlag = options.toggleFlag or nil
