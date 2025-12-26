@@ -10,8 +10,10 @@ local NLib 		= loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/R
 
 local wind = NLib:MakeWindow({
     name = "Name Hub",
+    
     sizeX = 330,
     sizeY = 360,
+    
     theme = "Dark"
 })
 
@@ -21,6 +23,7 @@ local tab = wind:MakeTab({
 
 local section = tab:MakeSection({
     Text = "Name Section",
+
     Column = 1 -- 1 - Left, 2 - Right
 })
 
@@ -29,7 +32,8 @@ section:MakeLabel({
 })
 
 section:MakeButton({
-    Name = "Button",
+    Text = "Button",
+
     callback = function()
         print("123")
     end
@@ -37,7 +41,9 @@ section:MakeButton({
 
 section:MakeToggle({
     Text = "Toggle",
+
     Flag = false,
+
     callback = function(v)
         if v then
             print("true")
@@ -49,6 +55,7 @@ section:MakeToggle({
 
 section:MakeTextBox({
     Text = "TextBox", -- or placeholder = ""
+
     callback = function(v)
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
     end
@@ -56,11 +63,15 @@ section:MakeTextBox({
 
 section:MakeSlider({
     Text = "Slider",
+
     Min = 1,
     Max = 16,
+
     ValueType = "/",
+
     Decimals = 1,
     Default = 16,
+
     callback = function(v)
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
     end
@@ -68,8 +79,11 @@ section:MakeSlider({
 
 section:MakeDropdown({
     Content = {"Dropdown", "1"},
+
     multiChoice = false,
+
     Default = "1",
+
     callback = function(v)
         if v == "Dropdown" then
             print("1")
@@ -81,7 +95,9 @@ section:MakeDropdown({
 
 section:MakeKeybind({
     Text = "Keybind",
+
     Default = Enum.KeyCode.B,
+
     callback = function()
         print("Keybind")
     end
@@ -89,7 +105,9 @@ section:MakeKeybind({
 
 section:MakeToggleKeybind({
     name = "ToggleKeybind";
+
     Default = Enum.KeyCode.B;
+
     keybindFlag = true;
     toggleFlag = true;
 
@@ -104,7 +122,9 @@ section:MakeToggleKeybind({
 
 section:MakeColorPicker({
     Text = "ColorPicker",
+
     Default = Color3.fromRGB(255,255,255),
+
     callback = function(v)
         print(v)
     end
@@ -112,10 +132,13 @@ section:MakeColorPicker({
 
 section:MakeToggleColorPicker({
     Text = "ToggleColorPicker",
+
     Default = Color3.fromRGB(255,255,255),
+
     colorPickerCallback = function(v)
         print(v)
     end,
+
     toggleCallback = function(v)
         if v then
             print(v)
@@ -123,5 +146,4 @@ section:MakeToggleColorPicker({
             print(v)
         end
     end
-
 })
