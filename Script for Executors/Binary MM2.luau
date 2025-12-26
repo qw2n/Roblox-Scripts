@@ -284,7 +284,7 @@ local connection; connection = RunService.RenderStepped:Connect(function()
 		if cfg.Misc.AntiFling then
 			for _, i in Players:GetPlayers() do
 				if i == plr then continue end
-				
+
 				local Character = i.Character
 				if Character then
 					for _, i in Character:GetChildren() do
@@ -318,6 +318,8 @@ while task.wait(0.01) do
 
         StatusLabel:SetText("Status: Disabled")
 
+		task.wait(1)
+
 		continue
 	end
 
@@ -329,7 +331,7 @@ while task.wait(0.01) do
         CoinCounter = FeatchObject(PlayerGui, "SnowToken", "Frame")
     end
 	
-	if not IsReadyToFarm() then StatusLabel:SetText("Status: Waiting game...") continue end
+	if not IsReadyToFarm() then StatusLabel:SetText("Status: Waiting game...") task.wait(1) continue end
 
 	if IsCoinsBagFull() then
 		local Humanoid = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
