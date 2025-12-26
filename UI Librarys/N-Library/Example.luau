@@ -104,7 +104,7 @@ section:MakeKeybind({
 })
 
 section:MakeToggleKeybind({
-    name = "ToggleKeybind";
+    Text = "ToggleKeybind";
 
     Default = Enum.KeyCode.B;
 
