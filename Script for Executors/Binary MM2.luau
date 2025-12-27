@@ -46,6 +46,11 @@ local cfg = {
 	}
 }
 
+local ServerInfo = {
+	PlayersCount = 0,
+	MaxPlayersCount = Players.MaxPlayers
+}
+
 local CoinContainer = nil
 local CoinCounter = nil
 
@@ -133,7 +138,7 @@ local function GetNearestCoin(RootPart: Part): Part & number
 	local Time = lastDistance/10
 	return lastCoin, if Time > 2 then 2
 	else if
-		Time < 1.2 then 0.1
+		Time < 2 then 0.1
 		else 1
 end
 
@@ -149,6 +154,41 @@ local function FixCharacterCollisions(Character: Model)
 	if UpperTorso and not UpperTorso.CanCollide then
 		UpperTorso.CanCollide = true
 	end
+end
+
+local function ConvertTime(Time: number): string
+    if Time < 0 then
+        return "0s"
+    end
+
+	local parts = {}
+    
+    local days = math.floor(Time / 86400)
+    Time = Time % 86400
+    
+    local hours = math.floor(Time / 3600)
+    Time = Time % 3600
+    
+    local minutes = math.floor(Time / 60)
+    local seconds = Time % 60
+    
+    if days > 0 then
+        table.insert(parts, days .. "d")
+    end
+    
+    if hours > 0 then
+        table.insert(parts, hours .. "h")
+    end
+    
+    if minutes > 0 then
+        table.insert(parts, minutes .. "m")
+    end
+    
+    if seconds > 0 or #parts == 0 then
+        table.insert(parts, math.floor(seconds) .. "s")
+    end
+    
+    return table.concat(parts, " : ")
 end
 
 genv.BinaryMM2 = {
@@ -171,18 +211,18 @@ genv.BinaryMM2 = {
 
 local __module = loadstring(
 	game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
-	--readfile("ui_library.txt")
+	--readfile("ui_library.luau")
 )()
 
 local Window = __module:MakeWindow({
-	name = "Binary MM2 | v1.0.1",
+	name = "Binary MM2 | v1.0.2",
 	theme = "Metalic",
 
 	sizeX = 330,
 	sizeY = 400,
 }) 
 
-local StatusLabel do
+local StatusLabel, RuntimeLabel, PlayersCountLabel do
     local tab = Window:MakeTab({
         Text = "Home"
     }) do
@@ -202,6 +242,26 @@ local StatusLabel do
 				end
             })
         end
+
+		local section = tab:MakeSection({
+			Text = "Server Info",
+			Column = 2
+		}) do
+			PlayersCountLabel = section:MakeLabel({
+				Text = "Players: 0/"..tostring(Players.MaxPlayers)
+			})
+
+			RuntimeLabel = section:MakeLabel({
+				Text = "Runtime: 0"
+			})
+
+			section:MakeButton({
+				Text = "Copy Server Id",
+				callback = function()
+					setclipboard(game.JobId)
+				end
+			})
+		end
     end
 
 	local tab = Window:MakeTab({
@@ -274,15 +334,30 @@ local StatusLabel do
 	end
 end
 
-local connection; connection = RunService.RenderStepped:Connect(function()
+local local_delta_value = 0
+local connection; connection = RunService.RenderStepped:Connect(function(delta)
 	if IsThreadQueueToDestroy() then
 		return connection:Disconnect()
 	end
 
+	local_delta_value += delta
+
+	local PlayersContainer = Players:GetPlayers()
+
+	ServerInfo.PlayersCount = #PlayersContainer
+
+	if local_delta_value >= 1 then
+		RuntimeLabel:SetText("Runtime: "..ConvertTime(workspace.DistributedGameTime))
+
+		local_delta_value = 0
+	end
+
+	PlayersCountLabel:SetText(`Players: {ServerInfo.PlayersCount}/{ServerInfo.MaxPlayersCount}`)
+
 	local Character = plr.Character
 	if Character then
 		if cfg.Misc.AntiFling then
-			for _, i in Players:GetPlayers() do
+			for _, i in PlayersContainer do
 				if i == plr then continue end
 
 				local Character = i.Character
@@ -363,7 +438,7 @@ while task.wait(0.01) do
 		false,
 		0
 	), {
-		CFrame = Coin.CFrame
+		CFrame = CFrame.new(Coin.Position)
 	})
 
 	Tween:Play()
