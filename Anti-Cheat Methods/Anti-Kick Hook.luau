@@ -1,4 +1,4 @@
--- by Qwar1e
+-- by BinaryCrypt (Aka Qwar1e)
 
 local Players = game:GetService("Players")
 
