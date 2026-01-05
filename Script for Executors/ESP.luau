@@ -251,16 +251,16 @@ end
 
 if cfg.UI then
 	local __module = loadstring(
-		--game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
-		readfile("ui_library.txt")
+		game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/UI%20Librarys/N-Library/Main.luau")
+		--readfile("ui_library.luau")
 	)()
 
-	local Window = __module:MakeWindow({
-		name = "Undetected ESP | v1.2.2",
-		theme = "Dark",
+	local Window = __module.new({
+		Name = "Undetected ESP | v1.2.3",
+	    Theme = "Dark",
 
-		sizeX = 330,
-		sizeY = 400,
+		SizeX = 330,
+		SizeY = 400,
 	})
 
 	do
@@ -277,7 +277,8 @@ if cfg.UI then
 			section:MakeToggle({
 				Text = "Enabled",
 				Flag = cfg.ESP.Enabled,
-				callback = function(v: boolean)
+
+				Callback = function(v: boolean)
 					cfg.ESP.Enabled = v
 				end
 			})
@@ -285,7 +286,8 @@ if cfg.UI then
 			section:MakeToggle({
 				Text = "Team Check",
 				Flag = cfg.ESP.TeamCheck,
-				callback = function(v: boolean)
+
+				Callback = function(v: boolean)
 					cfg.ESP.TeamCheck = v
 				end
 			})
@@ -293,7 +295,8 @@ if cfg.UI then
             section:MakeToggle({
 				Text = "Show Box",
 				Flag = cfg.ESP.ShowBox,
-				callback = function(v: boolean)
+
+				Callback = function(v: boolean)
 					cfg.ESP.ShowBox = v
 				end
 			})
@@ -301,7 +304,8 @@ if cfg.UI then
 			section:MakeToggle({
 				Text = "Show Distance",
 				Flag = cfg.ESP.ShowDistance,
-				callback = function(v: boolean)
+
+				Callback = function(v: boolean)
 					cfg.ESP.ShowDistance = v
 				end
 			})
@@ -309,7 +313,8 @@ if cfg.UI then
             section:MakeToggle({
 				Text = "Show Health",
 				Flag = cfg.ESP.ShowHealth,
-				callback = function(v: boolean)
+
+				Callback = function(v: boolean)
 					cfg.ESP.ShowHealth = v
 				end
 			})
@@ -318,7 +323,7 @@ if cfg.UI then
 				Text = "Color",
 				Default = cfg.ESP.Color,
 
-				callback = function(v)
+				Callback = function(v)
 					cfg.ESP.Color = v
 				end
 			})
@@ -334,7 +339,7 @@ if cfg.UI then
 				Text = "Tracer Enabled",
 				Flag = cfg.Tracer.Enabled,
 
-				callback = function(v: boolean)
+				Callback = function(v: boolean)
 					cfg.Tracer.Enabled = v
 				end
 			})
@@ -342,9 +347,9 @@ if cfg.UI then
 			section:MakeDropdown({
 				Default = cfg.Tracer.Origin,
 				Content = {"Bottom", "Middle", "Top", "Cursor"},
-				multiChoice = false,
+				MultiChoice = false,
 
-				callback = function(v)
+				Callback = function(v)
 					cfg.Tracer.Origin = v
 				end
 			})
