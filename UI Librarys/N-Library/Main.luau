@@ -156,21 +156,13 @@ local Settings = {
 	DragSpeed = 0.1,
 
 	Open_Menu_On_Execute = true,
-
-	DebugMode = false
 }
-
-if not Settings.DebugMode then
-	warn = function() end
-	print = function() end
-	error = function() end
-end
 
 local function check(a, b, c)
 	if not a then
-		if b and b:len() > 0 then
-			warn(`[!] {b}`)
-		end
+		-- if b and b:len() > 0 then
+		-- 	warn(`[!] {b}`)
+		-- end
 
 		return c
 	end
