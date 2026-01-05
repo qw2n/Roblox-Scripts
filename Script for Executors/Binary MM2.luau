@@ -4,22 +4,39 @@
 
 -- Script: loadstring(game:HttpGet("https://raw.githubusercontent.com/qw2n/Roblox-Scripts/refs/heads/main/Script%20for%20Executors/Binary%20MM2.luau"))()
 
-local function check(a, b): any
+local function check(a: any, b: string, throw_error: boolean, fn: () -> ()): any
     if not a then
-        error(b, 2)
+        if throw_error then
+			error(b, 2)
+		end
+
+		return fn
     end
 
     return a
 end
 
-local getgenv = check(getgenv, "Your executor not support 'getgenv'")
-local cloneref = check(cloneref, "Your executor not support 'cloneref'")
-local setclipboard = check(setclipboard, "Your executor not support 'setclipboard'")
+local getgenv = check(getgenv, nil, false, function()
+	if not _G.__hidden_env then
+		_G.__hidden_env = {}
+	end
+
+	return _G.__hidden_env
+end)
+
+local cloneref = check(cloneref, nil, false, function(object)
+	return object
+end)
+
+local setclipboard = check(setclipboard, nil, false, nil)
+local firetouchinterest = check(firetouchinterest, nil, false, nil)
 
 local g_const_huge = math.huge
 local g_kill_mainthread = false
+local g_connections = {}
 
 local c_tween = nil
+local c_dropped_gun = nil
 local c_bodyvelocity = nil
 
 local genv = getgenv()
@@ -37,12 +54,19 @@ local PlayerGui = plr.PlayerGui
 
 local cfg = {
 	Autofarm = {
-		Enabled = false
+		Enabled = false,
+
+		DeathOnMaxCoins = false
 	},
 
 	Misc = {
 		Noclip = false,
 		AntiFling = false
+	},
+
+	GunUtility = {
+		HighlightGun = false,
+		AutoGunTaking = false
 	}
 }
 
@@ -77,8 +101,12 @@ local function IsReadyToFarm(): boolean
 	return IsInLobby() == false
 end
 
+local function IsObjectAlive(Object): boolean
+	return Object and Object.Parent ~= nil
+end
+
 local function IsCoinAlive(Coin: Part): boolean
-	return Coin and Coin:FindFirstChild("CoinVisual") and Coin.CoinVisual.Transparency == 0
+	return IsObjectAlive(Coin) and Coin:FindFirstChild("CoinVisual") and Coin.CoinVisual.Transparency == 0
 end
 
 local function IsThreadQueueToDestroy(): boolean
@@ -138,7 +166,7 @@ local function GetNearestCoin(RootPart: Part): Part & number
 	local Time = lastDistance/10
 	return lastCoin, if Time > 2 then 2
 	else if
-		Time < 2 then 0.1
+		Time < 1.5 then 0.1
 		else 1
 end
 
@@ -191,9 +219,41 @@ local function ConvertTime(Time: number): string
     return table.concat(parts, " : ")
 end
 
+local function setHighlight(Object)
+	Instance.new("Highlight", Object)
+end
+
+local function TakeGun(a)
+	if not firetouchinterest then return end
+	if IsInLobby() then return end
+
+	local RootPart = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+	if not RootPart then return end
+	
+	local Gun = a or c_dropped_gun or FeatchObject(workspace, "GunDrop", "Part")
+	if not Gun then return end
+
+	pcall(function()
+		repeat task.wait(0.1)
+			firetouchinterest(Gun, RootPart, false)
+		until IsObjectAlive(Gun) == false
+	end)
+end
+
+local function GetHumanoidFromPlayer(plr: Player): Humanoid
+	return plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+end
+
 genv.BinaryMM2 = {
 	Destroy = function()
 		g_kill_mainthread = true
+
+		for s, i in g_connections do
+			if i then
+				i:Disconnect()
+				g_connections[s] = nil
+			end
+		end
 
 		if c_tween then
 			c_tween:Cancel()
@@ -206,6 +266,12 @@ genv.BinaryMM2 = {
 		for _, i in Players:GetPlayers() do
 			FixCharacterCollisions(i)
 		end
+
+		local Humanoid = GetHumanoidFromPlayer(plr)
+		if Humanoid then
+			Humanoid.WalkSpeed = 16
+			Humanoid.JumpPower = 50
+		end
 	end
 }
 
@@ -214,12 +280,14 @@ local __module = loadstring(
 	--readfile("ui_library.luau")
 )()
 
-local Window = __module:MakeWindow({
-	name = "Binary MM2 | v1.0.2",
-	theme = "Metalic",
+local Window = __module.new({
+	Name = "Binary MM2 | v1.0.3",
+	Theme = "Metalic",
 
-	sizeX = 330,
-	sizeY = 400,
+	SizeX = 330,
+	SizeY = 400,
+
+	OpenGuiKeyCode = Enum.KeyCode.Z
 }) 
 
 local StatusLabel, RuntimeLabel, PlayersCountLabel do
@@ -234,11 +302,17 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
                 Text = "by Qwar1e"
             })
 
+			section:MakeLabel({
+                Text = "Open/Close: Z"
+            })
+
             section:MakeButton({
                 Text = "Copy discord link",
 
-				callback = function()
-					setclipboard("https://discord.gg/pY6nDej76m")
+				Callback = function()
+					if setclipboard then
+						setclipboard("https://discord.gg/pY6nDej76m")
+					end
 				end
             })
         end
@@ -257,8 +331,10 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
 
 			section:MakeButton({
 				Text = "Copy Server Id",
-				callback = function()
-					setclipboard(game.JobId)
+				Callback = function()
+					if setclipboard then
+						setclipboard(game.JobId)
+					end
 				end
 			})
 		end
@@ -270,13 +346,13 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
 		local NoclipButton, AntiFlingButton
 
 		local section = tab:MakeSection({
-			Text = "AutoFarm",
+			Text = "Auto-Farm",
 			Column = 1
 		}) do
             section:MakeToggle({
                 Text = "Enable",
                 Flag = cfg.Autofarm.Enabled,
-                callback = function(v: boolean)
+                Callback = function(v: boolean)
                     cfg.Autofarm.Enabled = v
 
 					NoclipButton:Toggle(v)
@@ -297,6 +373,23 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
             StatusLabel = section:MakeLabel({
                 Text = "Status: None"
             })
+
+			section:MakeLabel({
+                Text = ""
+            })
+
+			section:MakeLabel({
+                Text = "Auto-Farm Rules:"
+            })
+
+			section:MakeToggle({
+                Text = "Death on max coins",
+                Flag = cfg.Autofarm.DeathOnMaxCoins,
+
+                Callback = function(v: boolean)
+					cfg.Autofarm.DeathOnMaxCoins = v
+                end
+            })
         end
 
 		local section = tab:MakeSection({
@@ -306,7 +399,8 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
 			NoclipButton = section:MakeToggle({
 				Text = "Noclip",
 				Flag = cfg.Misc.Noclip,
-				callback = function(v)
+
+				Callback = function(v)
 					cfg.Misc.Noclip = v
 
 					if not cfg.Misc.Noclip then
@@ -318,6 +412,7 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
 			AntiFlingButton = section:MakeToggle({
 				Text = "Anti-Fling",
 				Flag = cfg.Misc.AntiFling,
+
 				callback = function(v)
 					cfg.Misc.AntiFling = v
 
@@ -329,6 +424,136 @@ local StatusLabel, RuntimeLabel, PlayersCountLabel do
 						end
 					end
 				end
+			})
+
+			local WalkSpeedSlider = section:MakeSlider({
+				Text = "WalkSpeed",
+				ValueType = "/",
+				
+				Min = 1,
+				Max = 300,
+				
+				Decimals = 1,
+				Default = 16,
+
+				Callback = function(v: number)
+					local Humanoid = GetHumanoidFromPlayer(plr)
+					if not Humanoid then return end
+
+					Humanoid.WalkSpeed = v
+				end
+			})
+
+			local JumpPowerSlider = section:MakeSlider({
+				Text = "JumpPower",
+				ValueType = "/",
+				
+				Min = 1,
+				Max = 300,
+				
+				Decimals = 1,
+				Default = 50,
+
+				Callback = function(v: number)
+					local Humanoid = GetHumanoidFromPlayer(plr)
+					if not Humanoid then return end
+					
+					Humanoid.JumpPower = v
+				end
+			})
+
+			section:MakeButton({
+				Text = "Reset",
+
+				Callback = function()
+					WalkSpeedSlider:SetValue(16)
+					JumpPowerSlider:SetValue(50)
+
+					local Humanoid = GetHumanoidFromPlayer(plr)
+					if Humanoid then
+						Humanoid.WalkSpeed = 16
+						Humanoid.JumpPower = 50
+					end
+				end
+			})
+
+			section:MakeButton({
+				Text = "Reset Character",
+
+				Callback = function()
+					local Character = plr.Character
+					if not Character then return end
+
+					local RootPart = Character:FindFirstChild("HumanoidRootPart")
+					if not RootPart then return end
+
+					local Humanoid = GetHumanoidFromPlayer(plr)
+					if not Humanoid then return end
+
+					local last = RootPart.CFrame
+
+					Humanoid.Health = 0
+
+					local Yes = 0
+					while Yes < 100 and task.wait() do
+						Character = plr.Character
+						if not Character then continue end
+
+						RootPart = Character:FindFirstChild("HumanoidRootPart")
+						if RootPart then
+							RootPart.CFrame = last
+
+							if RootPart.CFrame == last then
+								Yes += 1
+							end
+						end
+					end
+				end
+			})
+		end
+
+		local section = tab:MakeSection({
+			Text = "Gun Utility",
+			Column = 1
+		}) do
+			section:MakeToggle({
+				Text = "Highlight Gun",
+				Flag = cfg.GunUtility.HighlightGun,
+
+				Callback = function(v)
+					cfg.GunUtility.HighlightGun = v
+
+					local Gun = c_dropped_gun or FeatchObject(workspace, "GunDrop", "Part")
+					if not Gun then return end
+
+					if cfg.GunUtility.HighlightGun then
+						setHighlight(Gun)
+					else
+						local Highlighter = Gun:FindFirstChildOfClass("Highlight")
+						if Highlighter then
+							Highlighter:Destroy()
+						end
+					end
+				end
+			})
+
+			section:MakeToggle({
+				Text = "Auto Gun Taking",
+				Flag = cfg.GunUtility.AutoGunTaking,
+
+				Callback = function(v)
+					cfg.GunUtility.AutoGunTaking = v
+
+					if cfg.GunUtility.AutoGunTaking then
+						TakeGun()
+					end
+				end
+			})
+
+			section:MakeButton({
+				Text = "Take Gun",
+
+				Callback = TakeGun
 			})
 		end
 	end
@@ -381,6 +606,20 @@ local connection; connection = RunService.RenderStepped:Connect(function(delta)
 	end
 end)
 
+table.insert(g_connections, workspace.DescendantAdded:Connect(function(Object)
+	if IsObjectAlive(Object) and Object.Name == "GunDrop" then
+		c_dropped_gun = Object
+
+		if cfg.GunUtility.HighlightGun then
+			setHighlight(Object)
+		end
+
+		if cfg.GunUtility.AutoGunTaking then
+			TakeGun(Object)
+		end
+	end
+end))
+
 while task.wait(0.01) do
 	if IsThreadQueueToDestroy() then
 		break
@@ -409,9 +648,11 @@ while task.wait(0.01) do
 	if not IsReadyToFarm() then StatusLabel:SetText("Status: Waiting game...") task.wait(1) continue end
 
 	if IsCoinsBagFull() then
-		local Humanoid = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
-		if Humanoid then
-			Humanoid.Health = 0
+		if cfg.Autofarm.DeathOnMaxCoins then
+			local Humanoid = GetHumanoidFromPlayer(plr)
+			if Humanoid then
+				Humanoid.Health = 0
+			end
 		end
 
         StatusLabel:SetText("Status: Coins bag is full!")
