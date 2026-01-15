@@ -177,6 +177,13 @@ local CloneRef = check(cloneref, "Your executor not support 'cloneref', library 
 	return o
 end)
 
+--// Closure Library
+local HookFunction = check(hookfunction, "", nil)
+local NewCClosure = check(newcclosure, "", nil)
+local HookMetaMethod = check(hookmetamethod, "", nil)
+local GetNamecallMethod = check(getnamecallmethod, "", nil)
+local RestoreFunction = check(restorefunction, "", nil)
+
 --// File System
 local GetCustomAsset = check(getcustomasset, "Your executor not support 'getcustomasset', library might be detected by Anti-Cheat!", nil)
 local WriteFile = check(writefile, "Your executor not support 'writefile', library might be detected by Anti-Cheat!", nil)
@@ -479,7 +486,6 @@ local Base64 = {} do
 		end
 
 		local result = {}
-		local temp
 
 		for i = 1, #bytes, 3 do
 			local b1, b2, b3 = bytes[i], bytes[i + 1], bytes[i + 2]
@@ -503,7 +509,6 @@ local Base64 = {} do
 	function Base64.decode(data: string): string
 		data = data:gsub('%s', '')
 
-		local result = {}
 		local temp = {}
 
 		for i = 1, #data, 4 do
@@ -884,6 +889,75 @@ function module:Destroy()
 	self.Window:Destroy()
 
 	table.clear(self)
+end
+
+function module:GetGui(): ScreenGui
+    return self.Window
+end
+
+function module:HideFromExplorer()
+	local manager = {}
+	local _CoreGui = game.CoreGui
+
+    if not HookMetaMethod then
+        error("[N-Library]: Calling HideFromExplorer() failed! Your executor not support 'hookmetamethod'", 2)
+    end
+
+    if not HookFunction then
+        error("[N-Library]: Calling HideFromExplorer() failed! Your executor not support 'hookfunction'", 2)
+    end
+
+    if not NewCClosure then
+        error("[N-Library]: Calling HideFromExplorer() failed! Your executor not support 'newcclosure'", 2)
+    end
+
+    if not GetNamecallMethod then
+        error("[N-Library]: Calling HideFromExplorer() failed! Your executor not support 'getnamecallmethod'", 2)
+    end
+
+    local function Hook(Object, call)
+        if Object == game or Object == _CoreGui then
+            local Childrens = call(Object)
+
+			local index = table.find(Childrens, self.Window)
+			if index then
+				table.remove(Childrens, index)
+			end
+
+			return Childrens
+        end
+
+        return call(Object)
+    end
+
+    local o; o = HookMetaMethod(game, "__namecall", NewCClosure(function(Object, ...)
+        local namecall = GetNamecallMethod()
+        if namecall == "GetChildren" or namecall == "GetDescendants" then
+            return Hook(Object, o)
+        end
+        
+        return o(Object, ...)
+    end))
+
+    local a; a = HookFunction(game.GetChildren, NewCClosure(function(Object)
+        return Hook(Object, a)
+    end))
+
+    local b; b = HookFunction(game.GetDescendants, NewCClosure(function(Object)
+        return Hook(Object, b)
+    end))
+
+	manager.unhook = function()
+		if not RestoreFunction then
+			error("[N-Library]: Calling HideFromExplorer() failed! Your executor not support 'restorefunction'", 2)
+		end
+
+		for _, i in {o, a, b} do
+			RestoreFunction(i)
+		end
+	end
+
+	return manager
 end
 
 function module:MakeTab(opts: TabType)
