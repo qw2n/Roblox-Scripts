@@ -26,7 +26,9 @@ Themes:
     :Hide()
     :Show()
     :Destroy()
-    
+    :GetGui()
+    :HideFromExplorer() -- Might be detected, use it on ur own risk!
+        .unhook()
 ]]
 local wind = NLib.new({
 	Name = "Name Hub",
