@@ -1,5 +1,6 @@
 -- by BinaryCrypt (Aka Qwar1e)
 -- Tested on Potassium
+-- PATCHED
 
 local __index, __newindex, __namecall
 
