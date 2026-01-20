@@ -45,7 +45,7 @@ while task.wait(1) do
     end, function ()
         local namecall = debug.info(2, "f")
         if namecall ~= __namecall then
-            print("__namecell detected | getrawmetatable")
+            print("__namecall detected | getrawmetatable")
         end
     end)
 end
