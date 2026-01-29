@@ -28,28 +28,7 @@ local RunService = cloneref(game:GetService("RunService")) :: RunService
 local Owner = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
-type espClassType = {
-	new: (plr: Player) -> espClassType,
-	RemoveBox: () -> nil,
-	HideBox: () -> nil,
-
-	plr: Player,
-
-	Components: {
-		Up: Frame,
-		Down: Frame,
-		Left: Frame,
-		Right: Frame,
-		Tracer: Frame?,
-		Distance: TextLabel?
-	},
-
-	__cache: {
-		lastColor: Color3,
-		lastTracerColor: Color3,
-		lastTracerThickness: number
-	}
-}
+local g_const_huge = math.huge
 
 type TracerModeType = "Bottom" | "Middle" | "Top" | "Cursor"
 
@@ -91,7 +70,7 @@ local espClass do
 	espClass = {}
 	espClass.__index = espClass
 
-	function espClass.new(plr: Player): espClassType
+	function espClass.new(plr: Player)
 		local old = genv.EspCache.Boxes[plr]
 		if old then return old end
 
@@ -188,10 +167,10 @@ local function getCharacterBoundingBox(character)
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return nil end
 	
-	local minX, minY, minZ = math.huge, math.huge, math.huge
-	local maxX, maxY, maxZ = -math.huge, -math.huge, -math.huge
+	local minX, minY, minZ = g_const_huge, g_const_huge, g_const_huge
+	local maxX, maxY, maxZ = -g_const_huge, -g_const_huge, -g_const_huge
 	
-	for _, part in ipairs(character:GetChildren()) do
+	for _, part in character:GetChildren() do
 		if part:IsA("BasePart") and part ~= rootPart then
 			local cf = part.CFrame
 			local size = part.Size
@@ -207,7 +186,7 @@ local function getCharacterBoundingBox(character)
 				cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2)
 			}
 			
-			for _, corner in ipairs(corners) do
+			for _, corner in corners do
 				local pos = corner.Position
 				minX = math.min(minX, pos.X)
 				minY = math.min(minY, pos.Y)
@@ -219,7 +198,7 @@ local function getCharacterBoundingBox(character)
 		end
 	end
 	
-	if minX == math.huge then
+	if minX == g_const_huge then
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
 		if humanoid then
 			local height = humanoid.HipHeight + 2
@@ -256,8 +235,8 @@ if cfg.UI then
 	)()
 
 	local Window = __module.new({
-		Name = "Undetected ESP | v1.2.3",
-	    Theme = "Dark",
+		Name = "Undetected ESP | v1.2.4",
+	    Theme = "Metalic",
 
 		SizeX = 330,
 		SizeY = 400,
@@ -431,7 +410,7 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 			}
 			
 			local screenCorners = {}
-			for name, corner in pairs(corners) do
+			for name, corner in corners do
 				local screenPos, visible = camera:WorldToViewportPoint(corner)
 				if visible then
 					screenCorners[name] = Vector2.new(screenPos.X, screenPos.Y)
@@ -441,12 +420,13 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 				end
 			end
 			
-			local minScreenX, minScreenY = math.huge, math.huge
-			local maxScreenX, maxScreenY = -math.huge, -math.huge
+			local minScreenX, minScreenY = g_const_huge, g_const_huge
+			local maxScreenX, maxScreenY = -g_const_huge, -g_const_huge
 			
-			for _, screenPos in pairs(screenCorners) do
+			for _, screenPos in screenCorners do
 				minScreenX = math.min(minScreenX, screenPos.X)
 				minScreenY = math.min(minScreenY, screenPos.Y)
+
 				maxScreenX = math.max(maxScreenX, screenPos.X)
 				maxScreenY = math.max(maxScreenY, screenPos.Y)
 			end
