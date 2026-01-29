@@ -93,20 +93,30 @@ local function IsInLobby(): boolean
 	return plr.NameDisplayDistance == 100
 end
 
-local function IsReadyToFarm(): boolean
-    if not CoinContainer or not CoinCounter then
-        return false
-    end
-
-	return IsInLobby() == false
-end
-
 local function IsObjectAlive(Object): boolean
 	return Object and Object.Parent ~= nil
 end
 
+local function IsReadyToFarm(): boolean
+    if not IsObjectAlive(CoinContainer) or not IsObjectAlive(CoinCounter) then
+        return false
+    end
+
+    return IsInLobby() == false
+end
+
 local function IsCoinAlive(Coin: Part): boolean
-	return IsObjectAlive(Coin) and Coin:FindFirstChild("CoinVisual") and Coin.CoinVisual.Transparency == 0
+    if not IsObjectAlive(Coin) then
+        return false
+    end
+
+    local CoinVisual = Coin:FindFirstChild("CoinVisual")
+    if not CoinVisual then return false end
+
+    local MainCoin = CoinVisual:FindFirstChild("MainCoin")
+    if not MainCoin then return false end
+
+	return MainCoin.Transparency == 0
 end
 
 local function IsThreadQueueToDestroy(): boolean
@@ -281,7 +291,7 @@ local __module = loadstring(
 )()
 
 local Window = __module.new({
-	Name = "Binary MM2 | v1.0.3",
+	Name = "Binary MM2 | v1.0.4",
 	Theme = "Metalic",
 
 	SizeX = 330,
@@ -642,7 +652,7 @@ while task.wait(0.01) do
     end
 
 	if not CoinCounter or (CoinCounter and CoinCounter.Parent == nil) then
-        CoinCounter = FeatchObject(PlayerGui, "SnowToken", "Frame")
+        CoinCounter = FeatchObject(PlayerGui, "Coin", "Frame")
     end
 	
 	if not IsReadyToFarm() then StatusLabel:SetText("Status: Waiting game...") task.wait(1) continue end
