@@ -26,6 +26,8 @@ local Players = cloneref(game:GetService("Players")) :: Players
 local RunService = cloneref(game:GetService("RunService")) :: RunService
 
 local Owner = Players.LocalPlayer
+local mouse = Owner:GetMouse()
+
 local camera = workspace.CurrentCamera
 
 local g_const_huge = math.huge
@@ -38,32 +40,79 @@ local cfg = {
 	ESP = {
 		Enabled = false,
         ShowBox = false,
+        SelfEsp = false,
 		TeamCheck = false,
         ShowHealth = false,
 		ShowDistance = false,
+		ShowSkeleton = false,
 		
 		Color = Color3.fromRGB(255, 255, 255)
 	},
 
 	Tracer = {
 		Enabled = false,
-
 		Origin = "Bottom" :: TracerModeType
 	}
 }
 
 genv.EspCache = {
 	Boxes = {},
+	Skeletons = {},
 	Connections = {},
 	Destroy = function()
 		for _, Box in genv.EspCache.Boxes do
 			Box:RemoveBox()
+		end
+		
+		for _, skeletonParts in genv.EspCache.Skeletons do
+			for _, part in skeletonParts do
+				part:Remove()
+			end
 		end
 
 		for _, i in genv.EspCache.Connections do
 			i:Disconnect()
 		end
 	end
+}
+
+local CharacterWhitelistedParts = {
+    ["R6"] = {
+        {"Head", "Torso"},
+        
+        {"Torso", "Left Arm"},
+        {"Left Arm", "LeftHand"},
+        
+        {"Torso", "Right Arm"},
+        {"Right Arm", "RightHand"},
+        
+        {"Torso", "Left Leg"},
+        {"Left Leg", "LeftFoot"},
+        
+        {"Torso", "Right Leg"},
+        {"Right Leg", "RightFoot"}
+    },
+
+    ["R15"] = {
+        {"Head", "UpperTorso"},
+        {"UpperTorso", "LowerTorso"},
+        
+        {"UpperTorso", "LeftUpperArm"},
+        {"LeftUpperArm", "LeftLowerArm"},
+        {"LeftLowerArm", "LeftHand"},
+        
+        {"UpperTorso", "RightUpperArm"},
+        {"RightUpperArm", "RightLowerArm"},
+        {"RightLowerArm", "RightHand"},
+        
+        {"LowerTorso", "LeftUpperLeg"},
+        {"LeftUpperLeg", "LeftLowerLeg"},
+        {"LeftLowerLeg", "LeftFoot"},
+        
+        {"LowerTorso", "RightUpperLeg"},
+        {"RightUpperLeg", "RightLowerLeg"},
+        {"RightLowerLeg", "RightFoot"}
+    }
 }
 
 local espClass do
@@ -76,13 +125,12 @@ local espClass do
 
 		local self = setmetatable({
 			plr = plr,
-
 			Components = nil,
-
 			__cache = {
 				lastColor = nil,
 				lastTracerColor = nil,
-				lastTracerThickness = nil
+				lastTracerThickness = nil,
+				isR6 = nil
 			}
 		}, espClass)
 
@@ -124,24 +172,35 @@ local espClass do
 		Distance.Outline = true
 		Distance.Transparency = 1
 
-        local HP = Drawing.new("Line")
-        HP.Visible = false
-        HP.Color = Color3.fromRGB(0, 255, 0)
-        HP.Thickness = 3
-        HP.Transparency = 1
+		local HP = Drawing.new("Line")
+		HP.Visible = false
+		HP.Color = Color3.fromRGB(0, 255, 0)
+		HP.Thickness = 3
+		HP.Transparency = 1
 
-        self.Components = {
-            Up = Up,
-            Down = Down,
-            Left = Left,
-            Right = Right,
-            Tracer = Tracer,
-            Distance = Distance,
-            
-            HP = HP
-        }
+		self.Components = {
+			Up = Up,
+			Down = Down,
+			Left = Left,
+			Right = Right,
+			Tracer = Tracer,
+			Distance = Distance,
+			HP = HP
+		}
 
 		genv.EspCache.Boxes[plr] = self
+		
+		genv.EspCache.Skeletons[plr] = {}
+		local maxConnections = math.max(#CharacterWhitelistedParts["R15"], #CharacterWhitelistedParts["R6"])
+		for i = 1, maxConnections do
+			local line = Drawing.new("Line")
+			line.Visible = false
+			line.Color = cfg.ESP.Color
+			line.Thickness = 1
+			line.Transparency = 1
+
+			table.insert(genv.EspCache.Skeletons[plr], line)
+		end
 
 		return self
 	end
@@ -149,6 +208,15 @@ local espClass do
 	function espClass:RemoveBox()
 		for _, i in self.Components do
 			i:Remove()
+		end
+		
+		local skeleton = genv.EspCache.Skeletons[self.plr]
+		if skeleton then
+			for _, line in skeleton do
+				line:Remove()
+			end
+
+			genv.EspCache.Skeletons[self.plr] = nil
 		end
 
 		if genv.EspCache.Boxes[self.plr] then
@@ -159,6 +227,93 @@ local espClass do
 	function espClass:HideBox()
 		for _, component in self.Components do
 			component.Visible = false
+		end
+		
+		local skeleton = genv.EspCache.Skeletons[self.plr]
+		if skeleton then
+			for _, line in skeleton do
+				line.Visible = false
+			end
+		end
+	end
+end
+
+local function detectRigType(character)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		return humanoid.RigType.Name
+	end
+	
+	return nil
+end
+
+local function findPartByName(character, partName)
+	local part = character:FindFirstChild(partName)
+	if part then return part end
+	
+	local altName = CharacterWhitelistedParts["R6"][partName]
+	if altName then
+		return character:FindFirstChild(altName)
+	end
+	
+	for _, child in character:GetChildren() do
+		if child:IsA("BasePart") then
+			local lowerChildName = string.lower(child.Name)
+			local lowerTargetName = string.lower(partName)
+			
+			if string.find(lowerChildName, lowerTargetName) or string.find(lowerTargetName, lowerChildName) then
+				return child
+			end
+		end
+	end
+	
+	return nil
+end
+
+local function updateSkeleton(character, plr, box)
+	if not cfg.ESP.ShowSkeleton then return end
+	
+	local skeleton = genv.EspCache.Skeletons[plr]
+	if not skeleton then return end
+	
+	local rigType = detectRigType(character)
+	
+	if box.__cache.isR6 ~= (rigType == "R6") then
+		box.__cache.isR6 = (rigType == "R6")
+	end
+	
+	local connections
+	if rigType == "R15" then
+		connections = CharacterWhitelistedParts["R15"]
+	else
+		connections = CharacterWhitelistedParts["R6"]
+	end
+	
+	for _, line in skeleton do
+		line.Visible = false
+	end
+	
+	for i, connection in connections do
+		local line = skeleton[i]
+		if not line then break end
+		
+		local part1Name, part2Name = connection[1], connection[2]
+		local part1 = findPartByName(character, part1Name)
+		local part2 = findPartByName(character, part2Name)
+		
+		if part1 and part2 then
+			local pos1 = part1.Position
+			local pos2 = part2.Position
+			
+			local screenPos1, onScreen1 = camera:WorldToViewportPoint(pos1)
+			local screenPos2, onScreen2 = camera:WorldToViewportPoint(pos2)
+			
+			if onScreen1 and onScreen2 then
+				line.From = Vector2.new(screenPos1.X, screenPos1.Y)
+				line.To = Vector2.new(screenPos2.X, screenPos2.Y)
+				line.Visible = true
+				line.Color = cfg.ESP.Color
+			end
 		end
 	end
 end
@@ -239,7 +394,9 @@ if cfg.UI then
 	    Theme = "Metalic",
 
 		SizeX = 330,
-		SizeY = 400,
+		SizeY = 420,
+
+        OpenGuiKeyCode = Enum.KeyCode.Z
 	})
 
 	do
@@ -256,7 +413,6 @@ if cfg.UI then
 			section:MakeToggle({
 				Text = "Enabled",
 				Flag = cfg.ESP.Enabled,
-
 				Callback = function(v: boolean)
 					cfg.ESP.Enabled = v
 				end
@@ -265,43 +421,54 @@ if cfg.UI then
 			section:MakeToggle({
 				Text = "Team Check",
 				Flag = cfg.ESP.TeamCheck,
-
 				Callback = function(v: boolean)
 					cfg.ESP.TeamCheck = v
 				end
 			})
 
-            section:MakeToggle({
-				Text = "Show Box",
-				Flag = cfg.ESP.ShowBox,
+			section:MakeToggle({
+				Text = "Self",
+				Flag = cfg.ESP.SelfEsp,
+				Callback = function(v: boolean)
+					cfg.ESP.SelfEsp = v
+				end
+			})
 
+			section:MakeToggle({
+				Text = "Box",
+				Flag = cfg.ESP.ShowBox,
 				Callback = function(v: boolean)
 					cfg.ESP.ShowBox = v
 				end
 			})
 
 			section:MakeToggle({
-				Text = "Show Distance",
+				Text = "Distance",
 				Flag = cfg.ESP.ShowDistance,
-
 				Callback = function(v: boolean)
 					cfg.ESP.ShowDistance = v
 				end
 			})
 
-            section:MakeToggle({
-				Text = "Show Health",
+			section:MakeToggle({
+				Text = "Health",
 				Flag = cfg.ESP.ShowHealth,
-
 				Callback = function(v: boolean)
 					cfg.ESP.ShowHealth = v
+				end
+			})
+			
+			section:MakeToggle({
+				Text = "Skeleton",
+				Flag = cfg.ESP.ShowSkeleton,
+				Callback = function(v: boolean)
+					cfg.ESP.ShowSkeleton = v
 				end
 			})
 
 			section:MakeColorPicker({
 				Text = "Color",
 				Default = cfg.ESP.Color,
-
 				Callback = function(v)
 					cfg.ESP.Color = v
 				end
@@ -317,7 +484,6 @@ if cfg.UI then
 			section:MakeToggle({
 				Text = "Tracer Enabled",
 				Flag = cfg.Tracer.Enabled,
-
 				Callback = function(v: boolean)
 					cfg.Tracer.Enabled = v
 				end
@@ -327,7 +493,6 @@ if cfg.UI then
 				Default = cfg.Tracer.Origin,
 				Content = {"Bottom", "Middle", "Top", "Cursor"},
 				MultiChoice = false,
-
 				Callback = function(v)
 					cfg.Tracer.Origin = v
 				end
@@ -352,18 +517,16 @@ end))
 table.insert(genv.EspCache.Connections, Players.PlayerAdded:Connect(espClass.new))
 
 table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(function()
-	local mouse = Owner:GetMouse()
-
 	for _, i in Players:GetPlayers() do
-		if i == Owner then continue end
-
-		local Box = genv.EspCache.Boxes[i]
+        local Box = genv.EspCache.Boxes[i]
 		if not Box then continue end
 
-		if not cfg.ESP.Enabled then
-			Box:HideBox()
+		if not cfg.ESP.SelfEsp and i == Owner then
+            Box:HideBox() continue
+        end
 
-			continue
+		if not cfg.ESP.Enabled then
+			Box:HideBox() continue
 		end
 
 		local Character = i.Character
@@ -374,7 +537,7 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 
 		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 		if not Humanoid then Box:HideBox() continue end
-        if Humanoid.Health == 0 then Box:HideBox() continue end
+		if Humanoid.Health == 0 then Box:HideBox() continue end
 
 		local Head = Character:FindFirstChild("Head")
 		if not Head then Box:HideBox() continue end
@@ -426,24 +589,23 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 			for _, screenPos in screenCorners do
 				minScreenX = math.min(minScreenX, screenPos.X)
 				minScreenY = math.min(minScreenY, screenPos.Y)
-
 				maxScreenX = math.max(maxScreenX, screenPos.X)
 				maxScreenY = math.max(maxScreenY, screenPos.Y)
 			end
 			
 			if cfg.ESP.Enabled then
-                if cfg.ESP.ShowBox then
-                    Box.Components.Up.From = Vector2.new(minScreenX, minScreenY)
-                    Box.Components.Up.To = Vector2.new(maxScreenX, minScreenY)
+				if cfg.ESP.ShowBox then
+					Box.Components.Up.From = Vector2.new(minScreenX, minScreenY)
+					Box.Components.Up.To = Vector2.new(maxScreenX, minScreenY)
 
-                    Box.Components.Down.From = Vector2.new(minScreenX, maxScreenY)
-                    Box.Components.Down.To = Vector2.new(maxScreenX, maxScreenY)
+					Box.Components.Down.From = Vector2.new(minScreenX, maxScreenY)
+					Box.Components.Down.To = Vector2.new(maxScreenX, maxScreenY)
 
-                    Box.Components.Left.From = Vector2.new(minScreenX, minScreenY)
-                    Box.Components.Left.To = Vector2.new(minScreenX, maxScreenY)
+					Box.Components.Left.From = Vector2.new(minScreenX, minScreenY)
+					Box.Components.Left.To = Vector2.new(minScreenX, maxScreenY)
 
-                    Box.Components.Right.From = Vector2.new(maxScreenX, minScreenY)
-                    Box.Components.Right.To = Vector2.new(maxScreenX, maxScreenY)
+					Box.Components.Right.From = Vector2.new(maxScreenX, minScreenY)
+					Box.Components.Right.To = Vector2.new(maxScreenX, maxScreenY)
 
 					Box.Components.Up.Visible = true
 					Box.Components.Down.Visible = true
@@ -454,59 +616,58 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 					Box.Components.Down.Visible = false
 					Box.Components.Left.Visible = false
 					Box.Components.Right.Visible = false
-                end
+				end
 
-                if cfg.ESP.ShowDistance then
-                    local localCharacter = Owner.Character
-                    local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
-                    
-                    if localRootPart then
-                        local distance = calculateDistance(localRootPart.Position, RootPart.Position)
-                        
-                        local distanceText = string.format("%.1f studs", distance)
-                        
-                        local textPosition = Vector2.new(
+				if cfg.ESP.ShowDistance then
+					local localCharacter = Owner.Character
+					local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+					
+					if localRootPart then
+						local distance = calculateDistance(localRootPart.Position, RootPart.Position)
+						
+						Box.Components.Distance.Position = Vector2.new(
                             (minScreenX + maxScreenX) / 2,
-                            minScreenY - 20
+                            maxScreenY + 10
                         )
-                        
-                        Box.Components.Distance.Position = textPosition
-                        Box.Components.Distance.Text = distanceText
-                    end
+
+						Box.Components.Distance.Text = string.format("%.1f studs", distance)
+					end
 
 					Box.Components.Distance.Visible = true
 				else
 					Box.Components.Distance.Visible = false
-                end
+				end
 
 				local HP = Box.Components.HP
-                if cfg.ESP.ShowHealth then
-                    local hpPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+				if cfg.ESP.ShowHealth then
+					local hpPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
 
-                    local barX = minScreenX - 6
-                    local barTop = minScreenY
-                    local barBottom = maxScreenY
+					local barX = minScreenX - 6
+					local barTop = minScreenY
+					local barBottom = maxScreenY
 
-                    local hpY = barBottom - (barBottom - barTop) * hpPercent
+					local hpY = barBottom - (barBottom - barTop) * hpPercent
 
-                    local hpColor
-                    if hpPercent > 0.5 then
-                        hpColor = Color3.fromRGB(0, 255, 0)
+					local hpColor
+					if hpPercent > 0.5 then
+						hpColor = Color3.fromRGB(0, 255, 0)
 
-                    elseif hpPercent > 0.2 then
-                        hpColor = Color3.fromRGB(255, 255, 0)
-                    else
-                        hpColor = Color3.fromRGB(255, 0, 0)
-                    end
+					elseif hpPercent > 0.2 then
+						hpColor = Color3.fromRGB(255, 255, 0)
+					else
+						hpColor = Color3.fromRGB(255, 0, 0)
+					end
 
-                    HP.Color = hpColor
-                    HP.From = Vector2.new(barX, barBottom)
-                    HP.To = Vector2.new(barX, hpY)
+					HP.Color = hpColor
+					HP.From = Vector2.new(barX, barBottom)
+					HP.To = Vector2.new(barX, hpY)
 
-                    HP.Visible = true
+					HP.Visible = true
 				else
 					HP.Visible = false
-                end
+				end
+				
+				updateSkeleton(Character, i, Box)
 			end
 
 			if cfg.Tracer.Enabled then
@@ -519,14 +680,14 @@ table.insert(genv.EspCache.Connections, RunService.RenderStepped:Connect(functio
 
 				if cfg.Tracer.Origin == "Bottom" then
 					tracerOrigin = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y)
-
-				elseif cfg.Tracer.Origin == "Middle" then
+				
+                elseif cfg.Tracer.Origin == "Middle" then
 					tracerOrigin = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-
-				elseif cfg.Tracer.Origin == "Top" then
+				
+                elseif cfg.Tracer.Origin == "Top" then
 					tracerOrigin = Vector2.new(camera.ViewportSize.X/2, 0)
-
-				elseif cfg.Tracer.Origin == "Cursor" then
+				
+                elseif cfg.Tracer.Origin == "Cursor" then
 					tracerOrigin = Vector2.new(mouse.X, mouse.Y + 36)
 				end
 
